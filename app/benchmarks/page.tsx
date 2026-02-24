@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Home, ChevronRight } from "lucide-react";
 import { BenchmarkCard } from "@/components/benchmark-card";
 import { PlanPanel } from "@/components/plan-panel";
 import { HVAC_BENCHMARKS } from "@/lib/benchmarks";
@@ -50,32 +52,32 @@ export default function BenchmarksPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b px-6 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <p className="text-sm font-semibold tracking-wide text-primary">
-            ShareWillow
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {companyData.name ?? "Your Company"}
-          </p>
-        </div>
+      <header className="border-b border-[#e5e5e5] px-6 py-5">
+        <nav className="flex items-center gap-3">
+          <Link href="/" className="text-slate-600 hover:text-slate-800">
+            <Home className="size-5" strokeWidth={1.5} />
+          </Link>
+          <ChevronRight className="size-5 text-slate-400" strokeWidth={1.5} />
+          <span className="text-md font-medium text-[#294be7]">
+            Benchmarks
+          </span>
+        </nav>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-8">
-          <h1 className="font-display text-3xl tracking-tight">
-            Your HVAC Benchmarks
+      <main className="mx-auto max-w-[1436px] px-6 py-8">
+        <div className="mb-6 flex flex-col gap-3">
+          <h1 className="font-display text-[32px] font-medium leading-none text-slate-800">
+            Here&apos;s how you compare to similar companies
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            {hasData
-              ? "Your metrics compared against HVAC companies with 15-25 employees"
-              : "Industry benchmarks for HVAC companies with 15-25 employees"}
+          <p className="max-w-[720px] text-[16px] leading-[20px] tracking-[-0.3px] text-slate-600">
+            We&apos;ve compared your numbers against HVAC companies just like
+            yours — same size, same industry.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+        <div className="flex items-start gap-[40px]">
           {/* Left — Benchmark cards */}
-          <div className="space-y-4 lg:col-span-3">
+          <div className="w-[896px] shrink-0 space-y-4">
             {HVAC_BENCHMARKS.map((metric) => (
               <BenchmarkCard
                 key={metric.name}
@@ -91,7 +93,7 @@ export default function BenchmarksPage() {
           </div>
 
           {/* Right — Plan panel */}
-          <div className="lg:col-span-2">
+          <div className="w-[500px] shrink-0">
             <div className="sticky top-8">
               <PlanPanel
                 planData={planData}

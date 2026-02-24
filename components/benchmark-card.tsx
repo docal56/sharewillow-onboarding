@@ -1,7 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BenchmarkMetric } from "@/types";
+import { BenchmarkMetric, RichDescription, TextSegment } from "@/types";
 
 interface BenchmarkCardProps {
   metric: BenchmarkMetric;
@@ -9,16 +8,38 @@ interface BenchmarkCardProps {
   insightCopy?: string;
 }
 
-function formatValue(
-  value: number,
-  metric: BenchmarkMetric
-): string {
+const HIGHLIGHT_COLORS = {
+  red: "font-medium text-[#de2424]",
+  green: "font-medium text-[#317e0d]",
+} as const;
+
+function RichText({ paragraphs }: { paragraphs: RichDescription }) {
+  return (
+    <div className="text-[14px] leading-[1.5] text-slate-600">
+      {paragraphs.map((segments, pIdx) => (
+        <p key={pIdx} className={pIdx < paragraphs.length - 1 ? "mb-3" : ""}>
+          {segments.map((seg: TextSegment, sIdx: number) =>
+            seg.color ? (
+              <span key={sIdx} className={HIGHLIGHT_COLORS[seg.color]}>
+                {seg.text}
+              </span>
+            ) : (
+              <span key={sIdx}>{seg.text}</span>
+            )
+          )}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function formatValue(value: number, metric: BenchmarkMetric): string {
   if (metric.unit === "currency" || metric.unit === "currencyPerMonth") {
     if (value >= 1_000_000) {
       return `${metric.prefix ?? ""}${(value / 1_000_000).toFixed(1)}M`;
     }
     if (value >= 1_000) {
-      return `${metric.prefix ?? ""}${(value / 1_000).toFixed(1)}K`;
+      return `${metric.prefix ?? ""}${Math.round(value / 1_000)}K`;
     }
     return `${metric.prefix ?? ""}${value}`;
   }
@@ -31,24 +52,16 @@ function formatValue(
   return `${metric.prefix ?? ""}${value}${metric.suffix ?? ""}`;
 }
 
-function getBarPercent(value: number, metric: BenchmarkMetric): number {
-  const values = [metric.lower, metric.median, metric.upper];
+function getBarWidthPercent(value: number, metric: BenchmarkMetric): number {
+  const MAX = 95;
   if (metric.invertedScale) {
-    // For inverted metrics, lower numeric value = better. Scale from upper (best) to lower (worst).
-    const min = metric.upper;
-    const max = metric.lower;
-    const range = max - min;
-    if (range === 0) return 50;
-    return Math.max(5, Math.min(95, ((value - min) / range) * 100));
+    const best = metric.upper;
+    if (value === 0) return 0;
+    return Math.max(8, Math.min(MAX, (best / value) * MAX));
   }
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min;
-  if (range === 0) return 50;
-  // Add some padding so bars don't start at 0
-  const paddedMin = min - range * 0.2;
-  const paddedMax = max + range * 0.2;
-  return Math.max(5, Math.min(95, ((value - paddedMin) / (paddedMax - paddedMin)) * 100));
+  const best = metric.upper;
+  if (best === 0) return 0;
+  return Math.max(8, Math.min(MAX, (value / best) * MAX));
 }
 
 export function BenchmarkCard({
@@ -56,93 +69,65 @@ export function BenchmarkCard({
   currentValue,
   insightCopy,
 }: BenchmarkCardProps) {
-  const lowerPct = getBarPercent(metric.lower, metric);
-  const medianPct = getBarPercent(metric.median, metric);
-  const upperPct = getBarPercent(metric.upper, metric);
-  const youPct =
-    currentValue != null ? getBarPercent(currentValue, metric) : null;
+  const hasYou = currentValue != null;
+
+  const rows = [
+    ...(hasYou
+      ? [{ label: "You", value: currentValue!, isYou: true }]
+      : []),
+    { label: "Upper", value: metric.upper, isYou: false },
+    { label: "Median", value: metric.median, isYou: false },
+    { label: "Lower", value: metric.lower, isYou: false },
+  ];
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold">
-          {metric.displayName}
-        </CardTitle>
-        {insightCopy && (
-          <p className="text-sm text-muted-foreground">{insightCopy}</p>
-        )}
-      </CardHeader>
-      <CardContent>
-        {/* Bar chart */}
-        <div className="relative h-12 rounded-md bg-muted">
-          {/* Benchmark tier markers */}
-          <BenchmarkMarker
-            position={lowerPct}
-            label="Lower"
-            value={formatValue(metric.lower, metric)}
-            color="bg-benchmark-range"
-          />
-          <BenchmarkMarker
-            position={medianPct}
-            label="Median"
-            value={formatValue(metric.median, metric)}
-            color="bg-benchmark-range"
-          />
-          <BenchmarkMarker
-            position={upperPct}
-            label="Upper"
-            value={formatValue(metric.upper, metric)}
-            color="bg-benchmark-range"
-          />
+    <div className="rounded-[16px] border border-[#e8e8e8] bg-white p-5">
+      <h2 className="font-display text-[24px] font-medium leading-none text-[#171717]">
+        {metric.displayName}
+      </h2>
 
-          {/* Your value */}
-          {youPct != null && currentValue != null && (
-            <div
-              className="absolute top-0 flex h-full flex-col items-center justify-center"
-              style={{ left: `${youPct}%`, transform: "translateX(-50%)" }}
-            >
-              <div className="h-full w-1 rounded-full bg-benchmark-you" />
-              <div className="absolute -top-6 whitespace-nowrap text-xs font-bold text-benchmark-you">
-                You: {formatValue(currentValue, metric)}
-              </div>
-            </div>
+      <div className="mt-5 flex items-start gap-5">
+        {/* Left — Insight text */}
+        <div className="w-[360px] shrink-0">
+          {insightCopy ? (
+            <p className="text-[14px] leading-[1.5] text-slate-600">
+              {insightCopy}
+            </p>
+          ) : (
+            <RichText paragraphs={metric.description} />
           )}
         </div>
 
-        {/* Legend row */}
-        <div className="mt-3 flex justify-between text-xs text-muted-foreground">
-          <span>
-            Lower: {formatValue(metric.lower, metric)}
-          </span>
-          <span>
-            Median: {formatValue(metric.median, metric)}
-          </span>
-          <span>
-            Upper: {formatValue(metric.upper, metric)}
-          </span>
+        {/* Right — Bar chart */}
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-3">
+          {rows.map((row) => (
+            <div key={row.label} className="flex w-full items-start gap-1">
+              <div className="flex h-8 w-[100px] shrink-0 items-center gap-2">
+                <span className="text-[14px] font-medium leading-none text-[#171717]">
+                  {row.label}
+                </span>
+              </div>
+              <div className="relative h-8 min-w-0 flex-1 overflow-clip rounded-[8px]">
+                <div
+                  className={`absolute left-0 top-0 h-8 rounded-[8px] ${
+                    row.isYou ? "bg-[#8136e7]" : "bg-[#f1e8ff]"
+                  }`}
+                  style={{
+                    width: `${getBarWidthPercent(row.value, metric)}%`,
+                  }}
+                />
+                <span
+                  className={`absolute left-[8px] top-1/2 -translate-y-1/2 text-[14px] font-medium leading-none ${
+                    row.isYou ? "text-white" : "text-[#171717]"
+                  }`}
+                >
+                  {formatValue(row.value, metric)}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function BenchmarkMarker({
-  position,
-  label,
-  value,
-  color,
-}: {
-  position: number;
-  label: string;
-  value: string;
-  color: string;
-}) {
-  return (
-    <div
-      className="absolute top-0 flex h-full flex-col items-center justify-center"
-      style={{ left: `${position}%`, transform: "translateX(-50%)" }}
-    >
-      <div className={`h-full w-0.5 rounded-full ${color} opacity-60`} />
+      </div>
     </div>
   );
 }

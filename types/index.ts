@@ -8,9 +8,14 @@ export interface CompanyData {
   annualRevenue: number;
 }
 
+export type TextSegment = { text: string; color?: "red" | "green" };
+export type RichParagraph = TextSegment[];
+export type RichDescription = RichParagraph[];
+
 export interface BenchmarkMetric {
   name: string;
   displayName: string;
+  description: RichDescription;
   lower: number;
   median: number;
   upper: number;
