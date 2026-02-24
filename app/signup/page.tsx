@@ -42,16 +42,16 @@ export default function SignupPage() {
   }
 
   return (
-    <AuthLayout
-      heading="Create your account"
-      subheading="Start by telling us about your company."
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="company-name">Company Name</Label>
+    <AuthLayout heading="Create your account">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="company-name" className="text-sm font-normal text-[#1a1a1a]">
+            Company name
+          </Label>
           <Input
             id="company-name"
-            placeholder="e.g. Summit Heating & Cooling"
+            placeholder="Company name"
+            className=""
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -60,12 +60,15 @@ export default function SignupPage() {
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="email" className="text-sm font-normal text-[#1a1a1a]">
+            Email
+          </Label>
           <Input
             id="email"
             type="email"
-            placeholder="you@company.com"
+            placeholder="Email"
+            className=""
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -74,12 +77,15 @@ export default function SignupPage() {
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="password" className="text-sm font-normal text-[#1a1a1a]">
+            Password
+          </Label>
           <Input
             id="password"
             type="password"
-            placeholder="At least 8 characters"
+            placeholder="Password"
+            className=""
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -88,14 +94,16 @@ export default function SignupPage() {
           )}
         </div>
 
-        <Button type="submit" className="w-full" size="lg">
-          Continue
+        <Button
+          type="submit"
+          className="h-auto w-full rounded-[10px] bg-[#294BE7] px-2 py-3 text-base font-medium hover:bg-[#294BE7]/90"
+        >
+          Sign up
         </Button>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/" className="text-primary hover:underline">
-            Sign in
+        <p className="text-center text-sm text-[#294BE7]">
+          <Link href="/" className="hover:underline">
+            Already have an account? Sign in
           </Link>
         </p>
       </form>

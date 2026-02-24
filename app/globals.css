@@ -5,42 +5,49 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Fonts — Matter (body) + P22 Mackinac (display) */
+  --font-sans: var(--font-matter);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-p22-mackinac);
+  --font-matter: var(--font-matter);
+  --font-mackinac: var(--font-p22-mackinac);
+
+  /* Semantic tokens (shadcn) */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-instrument-serif);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
   --color-benchmark-you: var(--benchmark-you);
   --color-benchmark-range: var(--benchmark-range);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radii */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -48,43 +55,207 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* ─── Brand palette: Slate ─── */
+  --color-slate-100: #F5F5F5;
+  --color-slate-200: #DDDDDD;
+  --color-slate-300: #BEBEBE;
+  --color-slate-400: #969696;
+  --color-slate-500: #6D6D6D;
+  --color-slate-600: #4E4E4E;
+  --color-slate-700: #333333;
+  --color-slate-800: #1A1A1A;
+
+  /* ─── Brand palette: Espresso ─── */
+  --color-espresso-100: #F4F2F2;
+  --color-espresso-200: #DDD9D9;
+  --color-espresso-300: #BFB5B5;
+  --color-espresso-400: #998C8C;
+  --color-espresso-500: #725E5E;
+  --color-espresso-600: #4B3C3C;
+  --color-espresso-700: #291E1E;
+  --color-espresso-800: #180600;
+
+  /* ─── Brand palette: Ivory ─── */
+  --color-ivory-100: #FEFEFB;
+  --color-ivory-200: #FCFBF5;
+  --color-ivory-300: #FAF8F0;
+  --color-ivory-400: #F7F3E9;
+  --color-ivory-500: #F6F2E0;
+  --color-ivory-600: #ECE7D4;
+  --color-ivory-700: #E3DDCA;
+  --color-ivory-800: #DAD4BF;
+
+  /* ─── Brand palette: Mushroom ─── */
+  --color-mushroom-50: #FDFBFA;
+  --color-mushroom-100: #FAF7F5;
+  --color-mushroom-200: #F6F2F0;
+  --color-mushroom-300: #EEE9E6;
+  --color-mushroom-400: #E3DFDD;
+  --color-mushroom-500: #D6D1CF;
+  --color-mushroom-600: #C5BFBC;
+  --color-mushroom-700: #AFA9A6;
+  --color-mushroom-800: #948E8A;
+
+  /* ─── Brand palette: Lemon ─── */
+  --color-lemon-100: #FFFDEA;
+  --color-lemon-200: #FFF8D3;
+  --color-lemon-300: #FEF3B0;
+  --color-lemon-400: #FCEF94;
+  --color-lemon-500: #FAF082;
+  --color-lemon-600: #F6DD67;
+  --color-lemon-700: #F1CA4A;
+  --color-lemon-800: #E6B030;
+
+  /* ─── Secondary palette: Rust ─── */
+  --color-rust-100: #FDF2E9;
+  --color-rust-200: #FCD7B6;
+  --color-rust-300: #F8BB8A;
+  --color-rust-400: #F4935B;
+  --color-rust-500: #E96C33;
+  --color-rust-600: #C84F1A;
+  --color-rust-700: #9E3A10;
+  --color-rust-800: #6F270A;
+
+  /* ─── Secondary palette: Ocean ─── */
+  --color-ocean-100: #F2F8FA;
+  --color-ocean-200: #D4E8EF;
+  --color-ocean-300: #A9D1DF;
+  --color-ocean-400: #7DB8CC;
+  --color-ocean-500: #4A98B4;
+  --color-ocean-600: #2E7490;
+  --color-ocean-700: #18536C;
+  --color-ocean-800: #0B3547;
+
+  /* ─── Secondary palette: Rose ─── */
+  --color-rose-100: #FAF1F3;
+  --color-rose-200: #F3DDE1;
+  --color-rose-300: #E4BCC5;
+  --color-rose-400: #D294A6;
+  --color-rose-500: #BA6F86;
+  --color-rose-600: #984E67;
+  --color-rose-700: #71364A;
+  --color-rose-800: #4D2434;
+
+  /* ─── Secondary palette: Lavender ─── */
+  --color-lavender-100: #F6F1F9;
+  --color-lavender-200: #E8DCEE;
+  --color-lavender-300: #D2BCE0;
+  --color-lavender-400: #B597CB;
+  --color-lavender-500: #916DAF;
+  --color-lavender-600: #6F4E8C;
+  --color-lavender-700: #4F3667;
+  --color-lavender-800: #342144;
+
+  /* ─── Secondary palette: Earth ─── */
+  --color-earth-100: #F7F2EF;
+  --color-earth-200: #E5DCD9;
+  --color-earth-300: #C9B8B1;
+  --color-earth-400: #A78E87;
+  --color-earth-500: #846868;
+  --color-earth-600: #674D4E;
+  --color-earth-700: #462F32;
+  --color-earth-800: #2E1A1D;
+
+  /* ─── Secondary palette: Fir ─── */
+  --color-fir-100: #F4F6EF;
+  --color-fir-200: #DCE3D0;
+  --color-fir-300: #C1CDB0;
+  --color-fir-400: #A2B48F;
+  --color-fir-500: #789262;
+  --color-fir-600: #587841;
+  --color-fir-700: #40592A;
+  --color-fir-800: #2B3C18;
+
+  /* ─── Support: Emerald (Success) ─── */
+  --color-emerald-100: #EAF9EC;
+  --color-emerald-200: #D3F2D7;
+  --color-emerald-300: #BCE8BF;
+  --color-emerald-400: #A8D9B0;
+  --color-emerald-500: #76B77E;
+  --color-emerald-600: #4A9953;
+  --color-emerald-700: #2E7A3B;
+  --color-emerald-800: #1B5D28;
+
+  /* ─── Support: Golden Sand (Warning) ─── */
+  --color-golden-100: #FEFAE8;
+  --color-golden-200: #FDF1CB;
+  --color-golden-300: #FAE1A2;
+  --color-golden-400: #F2CB74;
+  --color-golden-500: #E5A949;
+  --color-golden-600: #C8862C;
+  --color-golden-700: #9E651B;
+  --color-golden-800: #72470E;
+
+  /* ─── Support: Terracotta (Error) ─── */
+  --color-terracotta-100: #FCECE8;
+  --color-terracotta-200: #F4CFC2;
+  --color-terracotta-300: #EBA390;
+  --color-terracotta-400: #DC745E;
+  --color-terracotta-500: #C94D3B;
+  --color-terracotta-600: #A93724;
+  --color-terracotta-700: #812215;
+  --color-terracotta-800: #59140B;
+
+  /* ─── Support: Ryan Blue ─── */
+  --color-ryan-blue: #5866F4;
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.153 0.042 264.1); /* #0F172A dark navy */
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.153 0.042 264.1);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.153 0.042 264.1);
-  --primary: oklch(0.546 0.245 262.9); /* #2563EB blue */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0.001 264.1);
-  --secondary-foreground: oklch(0.153 0.042 264.1);
-  --muted: oklch(0.97 0.001 264.1);
-  --muted-foreground: oklch(0.45 0.02 264.1);
-  --accent: oklch(0.97 0.001 264.1);
-  --accent-foreground: oklch(0.153 0.042 264.1);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0.004 264.1);
-  --input: oklch(0.922 0.004 264.1);
-  --ring: oklch(0.546 0.245 262.9); /* match primary */
-  --chart-1: oklch(0.546 0.245 262.9);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --benchmark-you: oklch(0.541 0.281 293.7); /* purple */
-  --benchmark-range: oklch(0.9 0.05 293.7); /* light purple */
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.153 0.042 264.1);
-  --sidebar-primary: oklch(0.546 0.245 262.9);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.97 0.001 264.1);
-  --sidebar-accent-foreground: oklch(0.153 0.042 264.1);
-  --sidebar-border: oklch(0.922 0.004 264.1);
-  --sidebar-ring: oklch(0.546 0.245 262.9);
+
+  /* Surfaces */
+  --background: #FDFBFA;           /* Mushroom 50 */
+  --foreground: #180600;           /* Espresso 800 */
+  --card: #FFFFFF;
+  --card-foreground: #180600;      /* Espresso 800 */
+  --popover: #FFFFFF;
+  --popover-foreground: #180600;   /* Espresso 800 */
+
+  /* Primary — dark espresso for buttons & key actions */
+  --primary: #180600;              /* Espresso 800 */
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary — warm mushroom for subtle surfaces */
+  --secondary: #F6F2F0;           /* Mushroom 200 */
+  --secondary-foreground: #291E1E; /* Espresso 700 */
+
+  /* Muted — warm neutral for disabled/secondary text */
+  --muted: #F6F2F0;               /* Mushroom 200 */
+  --muted-foreground: #725E5E;    /* Espresso 500 */
+
+  /* Accent — ivory highlight */
+  --accent: #FAF8F0;              /* Ivory 300 */
+  --accent-foreground: #180600;   /* Espresso 800 */
+
+  /* Destructive — terracotta */
+  --destructive: #C94D3B;         /* Terracotta 500 */
+
+  /* Borders & inputs */
+  --border: #EEE9E6;              /* Mushroom 300 */
+  --input: #EEE9E6;               /* Mushroom 300 */
+  --ring: #180600;                /* Espresso 800 (matches primary) */
+
+  /* Charts — draw from the secondary palette */
+  --chart-1: #E96C33;             /* Rust 500 */
+  --chart-2: #4A98B4;             /* Ocean 500 */
+  --chart-3: #789262;             /* Fir 500 */
+  --chart-4: #F1CA4A;             /* Lemon 700 */
+  --chart-5: #916DAF;             /* Lavender 500 */
+
+  /* Benchmark visualisation */
+  --benchmark-you: #E96C33;       /* Rust 500 */
+  --benchmark-range: #EEE9E6;     /* Mushroom 300 */
+
+  /* Sidebar */
+  --sidebar: #FAF7F5;             /* Mushroom 100 */
+  --sidebar-foreground: #180600;  /* Espresso 800 */
+  --sidebar-primary: #180600;     /* Espresso 800 */
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F6F2F0;     /* Mushroom 200 */
+  --sidebar-accent-foreground: #180600;
+  --sidebar-border: #EEE9E6;     /* Mushroom 300 */
+  --sidebar-ring: #180600;       /* Espresso 800 */
 }
 
 @layer base {
@@ -93,5 +264,71 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* ─── Typography scale ─── */
+
+@layer utilities {
+  /* Display headings — P22 Mackinac Pro Book (400) */
+  .heading-1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 2.75rem;    /* 44px */
+    line-height: 3rem;     /* 48px */
+    letter-spacing: -0.6px;
+  }
+  .heading-2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 2rem;       /* 32px */
+    line-height: 2.25rem;  /* 36px */
+    letter-spacing: -0.6px;
+  }
+  .heading-3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.5rem;     /* 24px */
+    line-height: 2rem;     /* 32px */
+    letter-spacing: -0.6px;
+  }
+  .heading-4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.25rem;    /* 20px */
+    line-height: 1.5rem;   /* 24px */
+    letter-spacing: -0.6px;
+  }
+  .heading-5 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.125rem;   /* 18px */
+    line-height: 1.375rem; /* 22px */
+    letter-spacing: -0.6px;
+  }
+  /* H6 — Matter Medium (sans-serif heading) */
+  .heading-6 {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 1.25rem;    /* 20px */
+    line-height: 1.875rem; /* 30px */
+    letter-spacing: 0;
+  }
+
+  /* Body text — Matter */
+  .text-xl { font-size: 1.25rem; line-height: 1.875rem; }   /* 20/30 */
+  .text-lg { font-size: 1.125rem; line-height: 1.75rem; }   /* 18/28 */
+  .text-md { font-size: 1rem; line-height: 1.5rem; }        /* 16/24 */
+  .text-sm { font-size: 0.875rem; line-height: 1.25rem; }   /* 14/20 */
+  .text-xs { font-size: 0.75rem; line-height: 1.125rem; }   /* 12/18 */
+
+  /* Detail — Matter Medium, uppercase tracking */
+  .text-detail {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.75rem;    /* 12px */
+    line-height: 1.125rem; /* 18px */
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
   }
 }
