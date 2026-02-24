@@ -64,7 +64,7 @@ export default function BenchmarksPage() {
         </nav>
       </header>
 
-      <main className="mx-auto max-w-[1436px] px-6 py-8">
+      <main className="mx-auto max-w-[1436px] px-6 pb-8 pt-16">
         <div className="mb-6 flex flex-col gap-3">
           <h1 className="font-display text-[32px] font-medium leading-none text-slate-800">
             Here&apos;s how you compare to similar companies
