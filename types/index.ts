@@ -6,6 +6,7 @@ export interface CompanyData {
   teamSize: number;
   staffCosts: number;
   annualRevenue: number;
+  avgJobValue: number;
 }
 
 export type TextSegment = { text: string; color?: "red" | "green" };

@@ -52,16 +52,9 @@ function formatValue(value: number, metric: BenchmarkMetric): string {
   return `${metric.prefix ?? ""}${value}${metric.suffix ?? ""}`;
 }
 
-function getBarWidthPercent(value: number, metric: BenchmarkMetric): number {
-  const MAX = 95;
-  if (metric.invertedScale) {
-    const best = metric.upper;
-    if (value === 0) return 0;
-    return Math.max(8, Math.min(MAX, (best / value) * MAX));
-  }
-  const best = metric.upper;
-  if (best === 0) return 0;
-  return Math.max(8, Math.min(MAX, (value / best) * MAX));
+function getBarWidthPercent(value: number, maxValue: number): number {
+  if (maxValue === 0 || value === 0) return 0;
+  return Math.max(5, (value / maxValue) * 100);
 }
 
 export function BenchmarkCard({
@@ -80,8 +73,10 @@ export function BenchmarkCard({
     { label: "Lower", value: metric.lower, isYou: false },
   ];
 
+  const maxValue = Math.max(...rows.map((r) => r.value));
+
   return (
-    <div className="rounded-[16px] border border-[#e8e8e8] bg-white p-5">
+    <div className="rounded-[12px] border border-[#e8e8e8] bg-white p-5">
       <h2 className="font-display text-[24px] font-medium leading-none text-[#171717]">
         {metric.displayName}
       </h2>
@@ -113,7 +108,7 @@ export function BenchmarkCard({
                     row.isYou ? "bg-[#8136e7]" : "bg-[#f1e8ff]"
                   }`}
                   style={{
-                    width: `${getBarWidthPercent(row.value, metric)}%`,
+                    width: `${getBarWidthPercent(row.value, maxValue)}%`,
                   }}
                 />
                 <span

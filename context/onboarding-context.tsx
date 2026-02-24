@@ -2,12 +2,17 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
+  useEffect,
   useReducer,
+  useRef,
   type ReactNode,
   type Dispatch,
 } from "react";
 import { CompanyData, CSVRow, CSVSummary, PlanData } from "@/types";
+
+const STORAGE_KEY = "sharewillow-onboarding";
 
 interface OnboardingState {
   companyData: Partial<CompanyData>;
@@ -19,11 +24,13 @@ interface OnboardingState {
 }
 
 type OnboardingAction =
+  | { type: "HYDRATE"; payload: OnboardingState }
   | { type: "SET_COMPANY_DATA"; payload: Partial<CompanyData> }
   | { type: "SET_CSV_DATA"; payload: { rows: CSVRow[]; summary: CSVSummary } }
   | { type: "SET_API_KEY"; payload: string }
   | { type: "SET_PLAN_DATA"; payload: PlanData }
-  | { type: "SET_GENERATING"; payload: boolean };
+  | { type: "SET_GENERATING"; payload: boolean }
+  | { type: "RESET" };
 
 const initialState: OnboardingState = {
   companyData: {},
@@ -39,6 +46,8 @@ function onboardingReducer(
   action: OnboardingAction
 ): OnboardingState {
   switch (action.type) {
+    case "HYDRATE":
+      return { ...action.payload, isGeneratingPlan: false };
     case "SET_COMPANY_DATA":
       return {
         ...state,
@@ -56,6 +65,8 @@ function onboardingReducer(
       return { ...state, planData: action.payload, isGeneratingPlan: false };
     case "SET_GENERATING":
       return { ...state, isGeneratingPlan: action.payload };
+    case "RESET":
+      return initialState;
     default:
       return state;
   }
@@ -66,8 +77,49 @@ const OnboardingDispatchContext = createContext<Dispatch<OnboardingAction>>(
   () => {}
 );
 
+function saveState(state: OnboardingState) {
+  try {
+    // Don't persist transient UI state or the API key
+    const { isGeneratingPlan: _, anthropicApiKey: __, ...rest } = state;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
+  } catch {
+    // Storage full or unavailable — silently ignore
+  }
+}
+
+function clearState() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Storage unavailable — silently ignore
+  }
+}
+
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(onboardingReducer, initialState);
+
+  // Hydrate from localStorage after mount to avoid SSR mismatch
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        dispatch({ type: "HYDRATE", payload: { ...initialState, ...parsed } });
+      }
+    } catch {
+      // Corrupt storage — ignore
+    }
+  }, []);
+
+  // Persist on every state change (skip the initial render before hydration)
+  const hydrated = useRef(false);
+  useEffect(() => {
+    if (!hydrated.current) {
+      hydrated.current = true;
+      return;
+    }
+    saveState(state);
+  }, [state]);
 
   return (
     <OnboardingContext.Provider value={state}>
@@ -84,4 +136,12 @@ export function useOnboarding() {
 
 export function useOnboardingDispatch() {
   return useContext(OnboardingDispatchContext);
+}
+
+export function useResetOnboarding() {
+  const dispatch = useContext(OnboardingDispatchContext);
+  return useCallback(() => {
+    clearState();
+    dispatch({ type: "RESET" });
+  }, [dispatch]);
 }

@@ -15,6 +15,16 @@ import {
 } from "@/components/ui/select";
 import { useOnboardingDispatch } from "@/context/onboarding-context";
 
+function parseNumber(value: string): number {
+  return Number(value.replace(/[^0-9.]/g, "")) || 0;
+}
+
+function formatCurrency(value: string): string {
+  const num = value.replace(/[^0-9]/g, "");
+  if (!num) return "";
+  return Number(num).toLocaleString("en-US");
+}
+
 const INDUSTRIES = [
   "HVAC",
   "Plumbing",
@@ -30,6 +40,7 @@ export default function CompanyPage() {
   const [teamSize, setTeamSize] = useState("");
   const [staffCosts, setStaffCosts] = useState("");
   const [annualRevenue, setAnnualRevenue] = useState("");
+  const [avgJobValue, setAvgJobValue] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function handleSubmit(e: React.FormEvent) {
@@ -37,12 +48,14 @@ export default function CompanyPage() {
     const newErrors: Record<string, string> = {};
 
     if (!industry) newErrors.industry = "Select an industry";
-    if (!teamSize || parseInt(teamSize) <= 0)
+    if (!teamSize || parseNumber(teamSize) <= 0)
       newErrors.teamSize = "Enter a valid team size";
-    if (!staffCosts || parseFloat(staffCosts) <= 0)
+    if (!staffCosts || parseNumber(staffCosts) <= 0)
       newErrors.staffCosts = "Enter annual staff costs";
-    if (!annualRevenue || parseFloat(annualRevenue) <= 0)
+    if (!annualRevenue || parseNumber(annualRevenue) <= 0)
       newErrors.annualRevenue = "Enter annual revenue";
+    if (!avgJobValue || parseNumber(avgJobValue) <= 0)
+      newErrors.avgJobValue = "Enter average job value";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -53,9 +66,10 @@ export default function CompanyPage() {
       type: "SET_COMPANY_DATA",
       payload: {
         industry,
-        teamSize: parseInt(teamSize),
-        staffCosts: parseFloat(staffCosts),
-        annualRevenue: parseFloat(annualRevenue),
+        teamSize: parseNumber(teamSize),
+        staffCosts: parseNumber(staffCosts),
+        annualRevenue: parseNumber(annualRevenue),
+        avgJobValue: parseNumber(avgJobValue),
       },
     });
     router.push("/benchmarks");
@@ -120,7 +134,7 @@ export default function CompanyPage() {
             placeholder="What's your annual staff costs?"
             className=""
             value={staffCosts}
-            onChange={(e) => setStaffCosts(e.target.value)}
+            onChange={(e) => setStaffCosts(formatCurrency(e.target.value))}
           />
           {errors.staffCosts && (
             <p className="text-xs text-destructive">{errors.staffCosts}</p>
@@ -138,10 +152,28 @@ export default function CompanyPage() {
             placeholder="What's your annual revenue?"
             className=""
             value={annualRevenue}
-            onChange={(e) => setAnnualRevenue(e.target.value)}
+            onChange={(e) => setAnnualRevenue(formatCurrency(e.target.value))}
           />
           {errors.annualRevenue && (
             <p className="text-xs text-destructive">{errors.annualRevenue}</p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="avg-job-value" className="text-sm font-normal text-[#1a1a1a]">
+            Average Job Value
+          </Label>
+          <Input
+            id="avg-job-value"
+            type="text"
+            inputMode="numeric"
+            placeholder="What's your average job value?"
+            className=""
+            value={avgJobValue}
+            onChange={(e) => setAvgJobValue(formatCurrency(e.target.value))}
+          />
+          {errors.avgJobValue && (
+            <p className="text-xs text-destructive">{errors.avgJobValue}</p>
           )}
         </div>
 
