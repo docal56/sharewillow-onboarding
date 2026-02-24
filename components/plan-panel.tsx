@@ -8,6 +8,7 @@ import { PlanData } from "@/types";
 interface PlanPanelProps {
   planData: PlanData | null;
   teamSize: number;
+  industry?: string;
   isLoading?: boolean;
   onConnectData: () => void;
 }
@@ -15,6 +16,7 @@ interface PlanPanelProps {
 export function PlanPanel({
   planData,
   teamSize,
+  industry,
   isLoading,
   onConnectData,
 }: PlanPanelProps) {
@@ -35,7 +37,7 @@ export function PlanPanel({
     return <TeaserPanel onConnectData={onConnectData} />;
   }
 
-  return <FullPanel planData={planData} teamSize={teamSize} />;
+  return <FullPanel planData={planData} teamSize={teamSize} industry={industry} />;
 }
 
 function TeaserPanel({ onConnectData }: { onConnectData: () => void }) {
@@ -83,9 +85,11 @@ function TeaserPanel({ onConnectData }: { onConnectData: () => void }) {
 function FullPanel({
   planData,
   teamSize,
+  industry,
 }: {
   planData: PlanData;
   teamSize: number;
+  industry?: string;
 }) {
   return (
     <Card className="border-primary/20">
@@ -94,7 +98,7 @@ function FullPanel({
           Recommended Incentive Plan
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Based on your data vs HVAC industry benchmarks
+          Based on your data vs {industry ?? "HVAC"} industry benchmarks
         </p>
       </CardHeader>
       <CardContent className="space-y-4">

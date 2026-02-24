@@ -5,7 +5,6 @@ import { BenchmarkMetric, RichDescription, TextSegment } from "@/types";
 interface BenchmarkCardProps {
   metric: BenchmarkMetric;
   currentValue?: number | null;
-  insightCopy?: string;
 }
 
 const HIGHLIGHT_COLORS = {
@@ -60,7 +59,6 @@ function getBarWidthPercent(value: number, maxValue: number): number {
 export function BenchmarkCard({
   metric,
   currentValue,
-  insightCopy,
 }: BenchmarkCardProps) {
   const hasYou = currentValue != null;
 
@@ -84,13 +82,7 @@ export function BenchmarkCard({
       <div className="mt-5 flex items-start gap-5">
         {/* Left — Insight text */}
         <div className="w-[360px] shrink-0">
-          {insightCopy ? (
-            <p className="text-[14px] leading-[1.5] text-slate-600">
-              {insightCopy}
-            </p>
-          ) : (
-            <RichText paragraphs={metric.description} />
-          )}
+          <RichText paragraphs={metric.description} />
         </div>
 
         {/* Right — Bar chart */}

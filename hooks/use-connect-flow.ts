@@ -8,9 +8,8 @@ import {
 import { CSVRow, CSVSummary } from "@/types";
 
 export function useConnectFlow() {
-  const { companyData, anthropicApiKey, csvSummary } = useOnboarding();
+  const { companyData, csvSummary, benchmarks } = useOnboarding();
   const dispatch = useOnboardingDispatch();
-  const [localApiKey, setLocalApiKey] = useState(anthropicApiKey);
   const [localSummary, setLocalSummary] = useState<CSVSummary | null>(
     csvSummary
   );
@@ -23,9 +22,8 @@ export function useConnectFlow() {
   }
 
   async function handleGenerate(): Promise<boolean> {
-    if (!localApiKey || !localSummary) return false;
+    if (!localSummary) return false;
 
-    dispatch({ type: "SET_API_KEY", payload: localApiKey });
     dispatch({ type: "SET_GENERATING", payload: true });
     setIsGenerating(true);
     setError(null);
@@ -43,7 +41,7 @@ export function useConnectFlow() {
         body: JSON.stringify({
           companyData: safeCompanyData,
           csvSummary: localSummary,
-          anthropicApiKey: localApiKey,
+          benchmarks,
         }),
       });
 
@@ -72,12 +70,9 @@ export function useConnectFlow() {
     }
   }
 
-  const canGenerate =
-    localApiKey.startsWith("sk-ant-") && localSummary !== null;
+  const canGenerate = localSummary !== null;
 
   return {
-    localApiKey,
-    setLocalApiKey,
     localSummary,
     handleCSVParsed,
     handleGenerate,

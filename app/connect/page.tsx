@@ -2,17 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ApiKeyInput } from "@/components/api-key-input";
 import { CSVUpload } from "@/components/csv-upload";
 import { useConnectFlow } from "@/hooks/use-connect-flow";
 
 export default function ConnectPage() {
   const router = useRouter();
   const {
-    localApiKey,
-    setLocalApiKey,
     handleCSVParsed,
     handleGenerate,
     canGenerate,
@@ -33,28 +29,16 @@ export default function ConnectPage() {
             Connect Your Data
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Upload your job data and enter your API key to generate a
-            personalised incentive plan.
+            Upload your job data to generate a personalised incentive plan.
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
             <p className="mb-3 text-sm font-medium">
-              Step 1: Enter your API key
-            </p>
-            <ApiKeyInput value={localApiKey} onChange={setLocalApiKey} />
-          </div>
-
-          <Separator />
-
-          <div>
-            <p className="mb-3 text-sm font-medium">
-              Step 2: Upload your job data
+              Upload your job data
             </p>
             <CSVUpload onParsed={handleCSVParsed} />
           </div>
-
-          <Separator />
 
           {error && (
             <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">

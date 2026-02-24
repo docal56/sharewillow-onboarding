@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { buildPlanPrompt } from "@/lib/plan-prompt";
-import { CompanyData, CSVSummary } from "@/types";
+import { HVAC_BENCHMARKS } from "@/lib/benchmarks";
+import { BenchmarkMetric, CompanyData, CSVSummary } from "@/types";
 
 export async function POST(request: NextRequest) {
-  // Parse request body
   let body: Record<string, unknown>;
   try {
     body = await request.json();
@@ -12,14 +12,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { companyData, csvSummary, anthropicApiKey } = body;
+  const { companyData, csvSummary, benchmarks } = body;
 
-  if (!anthropicApiKey || typeof anthropicApiKey !== "string") {
-    return NextResponse.json(
-      { error: "Missing Anthropic API key" },
-      { status: 400 }
-    );
-  }
   if (!companyData || !csvSummary) {
     return NextResponse.json(
       { error: "Missing company data or CSV summary" },
@@ -27,29 +21,42 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "OpenAI API key not configured" },
+      { status: 500 }
+    );
+  }
+
   try {
-    const anthropic = new Anthropic({ apiKey: anthropicApiKey });
+    const openai = new OpenAI({ apiKey });
+    const resolvedBenchmarks = (benchmarks as BenchmarkMetric[]) ?? HVAC_BENCHMARKS;
     const { system, user } = buildPlanPrompt(
       companyData as Partial<CompanyData>,
-      csvSummary as CSVSummary
+      csvSummary as CSVSummary,
+      resolvedBenchmarks
     );
 
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
       max_tokens: 2000,
-      system,
-      messages: [{ role: "user", content: user }],
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
     });
 
-    const textBlock = message.content.find((c) => c.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
+    const responseText = completion.choices[0]?.message?.content;
+    if (!responseText) {
       return NextResponse.json(
-        { error: "No text response from Claude" },
+        { error: "No response from OpenAI" },
         { status: 502 }
       );
     }
 
-    let jsonText = textBlock.text.trim();
+    let jsonText = responseText.trim();
 
     // Strip markdown code fences if present
     const fenceMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
@@ -57,7 +64,6 @@ export async function POST(request: NextRequest) {
       jsonText = fenceMatch[1];
     }
 
-    // Parse and validate the JSON structure
     let planData: Record<string, unknown>;
     try {
       planData = JSON.parse(jsonText);
@@ -78,12 +84,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(planData);
   } catch (error: unknown) {
-    if (error instanceof Anthropic.AuthenticationError) {
-      return NextResponse.json(
-        { error: "Invalid API key. Please check your Anthropic API key." },
-        { status: 401 }
-      );
-    }
     const message =
       error instanceof Error ? error.message : "Failed to generate plan";
     return NextResponse.json({ error: message }, { status: 500 });

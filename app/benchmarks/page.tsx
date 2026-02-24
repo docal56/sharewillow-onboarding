@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Home, ChevronRight, RotateCcw } from "lucide-react";
 import { BenchmarkCard } from "@/components/benchmark-card";
 import { PlanPanel } from "@/components/plan-panel";
-import { HVAC_BENCHMARKS } from "@/lib/benchmarks";
+import { useBenchmarks } from "@/hooks/use-benchmarks";
 import { useOnboarding, useResetOnboarding } from "@/context/onboarding-context";
 import { CompanyData, CSVSummary } from "@/types";
 
@@ -42,11 +42,33 @@ function getCurrentValue(
   }
 }
 
+function BenchmarkSkeleton() {
+  return (
+    <div className="animate-pulse rounded-[12px] border border-[#e8e8e8] bg-white p-5">
+      <div className="h-6 w-48 rounded bg-slate-200" />
+      <div className="mt-5 flex items-start gap-5">
+        <div className="w-[360px] shrink-0 space-y-2">
+          <div className="h-4 w-full rounded bg-slate-100" />
+          <div className="h-4 w-3/4 rounded bg-slate-100" />
+          <div className="mt-3 h-4 w-5/6 rounded bg-slate-100" />
+          <div className="h-4 w-2/3 rounded bg-slate-100" />
+        </div>
+        <div className="flex-1 space-y-3">
+          <div className="h-8 w-full rounded-[8px] bg-slate-100" />
+          <div className="h-8 w-4/5 rounded-[8px] bg-slate-100" />
+          <div className="h-8 w-3/5 rounded-[8px] bg-slate-100" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BenchmarksPage() {
   const router = useRouter();
   const { companyData, csvSummary, planData, isGeneratingPlan } =
     useOnboarding();
   const resetOnboarding = useResetOnboarding();
+  const { benchmarks, isLoading: isLoadingBenchmarks } = useBenchmarks();
 
   function handleReset() {
     resetOnboarding();
@@ -56,8 +78,10 @@ export default function BenchmarksPage() {
   const hasConnectedData = csvSummary !== null;
   const PRE_CONNECT_METRICS = ["annualRevenue", "laborRate", "avgJobValue"];
   const visibleBenchmarks = hasConnectedData
-    ? HVAC_BENCHMARKS
-    : HVAC_BENCHMARKS.filter((m) => PRE_CONNECT_METRICS.includes(m.name));
+    ? benchmarks
+    : benchmarks.filter((m) => PRE_CONNECT_METRICS.includes(m.name));
+
+  const industryLabel = companyData.industry ?? "HVAC";
 
   return (
     <div className="min-h-screen bg-background">
@@ -90,36 +114,45 @@ export default function BenchmarksPage() {
             Here&apos;s how you compare to similar companies
           </h1>
           <p className="max-w-[720px] text-[16px] leading-[20px] tracking-[-0.3px] text-slate-600">
-            We&apos;ve compared your numbers against HVAC companies just like
-            yours — same size, same industry.
+            We&apos;ve compared your numbers against {industryLabel} companies
+            just like yours — same size, same industry.
           </p>
         </div>
 
         <div className="flex items-start gap-[40px]">
           {/* Left — Benchmark cards */}
           <div className="w-[896px] shrink-0 space-y-4">
-            {visibleBenchmarks.map((metric) => (
-              <BenchmarkCard
-                key={metric.name}
-                metric={metric}
-                currentValue={getCurrentValue(metric.name, companyData, csvSummary)}
-                insightCopy={planData?.insightCopy?.[metric.displayName]}
-              />
-            ))}
+            {isLoadingBenchmarks ? (
+              <>
+                <BenchmarkSkeleton />
+                <BenchmarkSkeleton />
+                <BenchmarkSkeleton />
+              </>
+            ) : (
+              <>
+                {visibleBenchmarks.map((metric) => (
+                  <BenchmarkCard
+                    key={metric.name}
+                    metric={metric}
+                    currentValue={getCurrentValue(metric.name, companyData, csvSummary)}
+                  />
+                ))}
 
-            {!hasConnectedData && (
-              <div className="flex flex-col items-center gap-7 rounded-[12px] border border-[#ede2d8] bg-[#f9f4f1] px-5 py-8">
-                <p className="font-display text-2xl font-medium text-[#171717]">
-                  Looking for a more detailed report? Connect your data.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => router.push("/connect")}
-                  className="rounded-[10px] bg-[#180600] px-3 py-3 text-base font-medium leading-5 text-white transition-colors hover:bg-[#180600]/90"
-                >
-                  Connect Your Data
-                </button>
-              </div>
+                {!hasConnectedData && (
+                  <div className="flex flex-col items-center gap-7 rounded-[12px] border border-[#ede2d8] bg-[#f9f4f1] px-5 py-8">
+                    <p className="font-display text-2xl font-medium text-[#171717]">
+                      Looking for a more detailed report? Connect your data.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/connect")}
+                      className="rounded-[10px] bg-[#180600] px-3 py-3 text-base font-medium leading-5 text-white transition-colors hover:bg-[#180600]/90"
+                    >
+                      Connect Your Data
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -129,6 +162,7 @@ export default function BenchmarksPage() {
               <PlanPanel
                 planData={planData}
                 teamSize={companyData.teamSize ?? 15}
+                industry={industryLabel}
                 isLoading={isGeneratingPlan}
                 onConnectData={() => router.push("/connect")}
               />

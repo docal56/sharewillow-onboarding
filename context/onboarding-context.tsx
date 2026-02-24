@@ -10,7 +10,7 @@ import {
   type ReactNode,
   type Dispatch,
 } from "react";
-import { CompanyData, CSVRow, CSVSummary, PlanData } from "@/types";
+import { BenchmarkMetric, CompanyData, CSVRow, CSVSummary, PlanData } from "@/types";
 
 const STORAGE_KEY = "sharewillow-onboarding";
 
@@ -18,7 +18,8 @@ interface OnboardingState {
   companyData: Partial<CompanyData>;
   csvData: CSVRow[];
   csvSummary: CSVSummary | null;
-  anthropicApiKey: string;
+  benchmarks: BenchmarkMetric[] | null;
+  isGeneratingBenchmarks: boolean;
   planData: PlanData | null;
   isGeneratingPlan: boolean;
 }
@@ -27,7 +28,8 @@ type OnboardingAction =
   | { type: "HYDRATE"; payload: OnboardingState }
   | { type: "SET_COMPANY_DATA"; payload: Partial<CompanyData> }
   | { type: "SET_CSV_DATA"; payload: { rows: CSVRow[]; summary: CSVSummary } }
-  | { type: "SET_API_KEY"; payload: string }
+  | { type: "SET_BENCHMARKS"; payload: BenchmarkMetric[] }
+  | { type: "SET_GENERATING_BENCHMARKS"; payload: boolean }
   | { type: "SET_PLAN_DATA"; payload: PlanData }
   | { type: "SET_GENERATING"; payload: boolean }
   | { type: "RESET" };
@@ -36,7 +38,8 @@ const initialState: OnboardingState = {
   companyData: {},
   csvData: [],
   csvSummary: null,
-  anthropicApiKey: "",
+  benchmarks: null,
+  isGeneratingBenchmarks: false,
   planData: null,
   isGeneratingPlan: false,
 };
@@ -47,7 +50,7 @@ function onboardingReducer(
 ): OnboardingState {
   switch (action.type) {
     case "HYDRATE":
-      return { ...action.payload, isGeneratingPlan: false };
+      return { ...action.payload, isGeneratingPlan: false, isGeneratingBenchmarks: false };
     case "SET_COMPANY_DATA":
       return {
         ...state,
@@ -59,8 +62,10 @@ function onboardingReducer(
         csvData: action.payload.rows,
         csvSummary: action.payload.summary,
       };
-    case "SET_API_KEY":
-      return { ...state, anthropicApiKey: action.payload };
+    case "SET_BENCHMARKS":
+      return { ...state, benchmarks: action.payload, isGeneratingBenchmarks: false };
+    case "SET_GENERATING_BENCHMARKS":
+      return { ...state, isGeneratingBenchmarks: action.payload };
     case "SET_PLAN_DATA":
       return { ...state, planData: action.payload, isGeneratingPlan: false };
     case "SET_GENERATING":
@@ -79,8 +84,8 @@ const OnboardingDispatchContext = createContext<Dispatch<OnboardingAction>>(
 
 function saveState(state: OnboardingState) {
   try {
-    // Don't persist transient UI state or the API key
-    const { isGeneratingPlan: _, anthropicApiKey: __, ...rest } = state;
+    // Don't persist transient UI state
+    const { isGeneratingPlan: _, isGeneratingBenchmarks: __, ...rest } = state;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
   } catch {
     // Storage full or unavailable — silently ignore
