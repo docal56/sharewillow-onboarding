@@ -1,10 +1,16 @@
 "use client";
 
 import { BenchmarkMetric, RichDescription, TextSegment } from "@/types";
+import {
+  BENCHMARK_INSIGHT_PROMPTS,
+  renderInsightPrompt,
+} from "@/lib/benchmark-insight-prompts";
 
 interface BenchmarkCardProps {
   metric: BenchmarkMetric;
   currentValue?: number | null;
+  industry: string;
+  teamSizeBand: string;
 }
 
 const HIGHLIGHT_COLORS = {
@@ -51,6 +57,12 @@ function formatValue(value: number, metric: BenchmarkMetric): string {
   return `${metric.prefix ?? ""}${value}${metric.suffix ?? ""}`;
 }
 
+function formatCompactCurrency(value: number): string {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `$${Math.round(value / 1_000)}K`;
+  return `$${Math.round(value).toLocaleString()}`;
+}
+
 const FIGMA_BAR_WIDTHS: Record<string, number> = {
   You: 142,
   Upper: 372,
@@ -61,8 +73,28 @@ const FIGMA_BAR_WIDTHS: Record<string, number> = {
 export function BenchmarkCard({
   metric,
   currentValue,
+  industry,
+  teamSizeBand,
 }: BenchmarkCardProps) {
   const hasYou = currentValue != null;
+  const description: RichDescription = (() => {
+    if (metric.name !== "annualRevenue" || currentValue == null) {
+      return metric.description;
+    }
+
+    const gap = Math.max(0, metric.median - currentValue);
+    const monthlyGap = gap / 12;
+
+    return renderInsightPrompt(BENCHMARK_INSIGHT_PROMPTS.annualRevenue, {
+      industry,
+      band: teamSizeBand,
+      median: formatValue(metric.median, metric),
+      lower: formatValue(metric.lower, metric),
+      upper: formatValue(metric.upper, metric),
+      delta: formatCompactCurrency(gap),
+      monthly_delta: formatCompactCurrency(monthlyGap),
+    });
+  })();
 
   const rows = [
     ...(hasYou
@@ -82,7 +114,7 @@ export function BenchmarkCard({
       <div className="mt-5 flex items-start gap-5">
         {/* Left — Insight text */}
         <div className="w-[360px] shrink-0">
-          <RichText paragraphs={metric.description} />
+          <RichText paragraphs={description} />
         </div>
 
         {/* Right — Bar chart */}

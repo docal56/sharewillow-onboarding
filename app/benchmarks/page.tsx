@@ -8,6 +8,7 @@ import { PlanPanel } from "@/components/plan-panel";
 import { useBenchmarks } from "@/hooks/use-benchmarks";
 import { useOnboarding, useResetOnboarding } from "@/context/onboarding-context";
 import { CompanyData, CSVSummary } from "@/types";
+import { getTeamSizeBand } from "@/lib/benchmark-catalog";
 
 function getCurrentValue(
   metricName: string,
@@ -56,6 +57,7 @@ export default function BenchmarksPage() {
     : benchmarks.filter((m) => PRE_CONNECT_METRICS.includes(m.name));
 
   const industryLabel = companyData.industry ?? "HVAC";
+  const teamSizeBand = getTeamSizeBand(companyData.teamSize ?? 12);
 
   function handleReset() {
     resetOnboarding();
@@ -114,6 +116,8 @@ export default function BenchmarksPage() {
                   key={metric.name}
                   metric={metric}
                   currentValue={getCurrentValue(metric.name, companyData, csvSummary)}
+                  industry={industryLabel}
+                  teamSizeBand={teamSizeBand}
                 />
               ))}
 
