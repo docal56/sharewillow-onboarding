@@ -52,6 +52,8 @@ export interface CSVSummary {
   avgTicket: number | null;
   billableEfficiency: number | null;
   callbackRate: number | null;
+  googleRating: number | null;
+  monthlyOvertimeSpend: number | null;
   totalJobs: number;
   totalRevenue: number | null;
 }

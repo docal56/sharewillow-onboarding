@@ -15,6 +15,8 @@ function getCurrentValue(
   companyData: Partial<CompanyData>,
   csvSummary: CSVSummary | null
 ): number | null {
+  const teamCount = companyData.numberOfTechs ?? companyData.teamSize;
+
   switch (metricName) {
     case "annualRevenue":
       return companyData.annualRevenue ?? null;
@@ -28,16 +30,23 @@ function getCurrentValue(
     case "avgJobValue":
       return csvSummary?.avgTicket ?? companyData.avgJobValue ?? null;
     case "monthlyRevenuePerMember":
-      if (companyData.annualRevenue && companyData.teamSize) {
+      if (companyData.annualRevenue && teamCount) {
         return Math.round(
-          companyData.annualRevenue / 12 / companyData.teamSize
+          companyData.annualRevenue / 12 / teamCount
         );
+      }
+      if (csvSummary?.totalRevenue && teamCount) {
+        return Math.round(csvSummary.totalRevenue / 12 / teamCount);
       }
       return null;
     case "billableEfficiency":
       return csvSummary?.billableEfficiency ?? null;
     case "callbackRate":
       return csvSummary?.callbackRate ?? null;
+    case "googleRating":
+      return csvSummary?.googleRating ?? null;
+    case "monthlyOvertimeSpend":
+      return csvSummary?.monthlyOvertimeSpend ?? null;
     default:
       return null;
   }

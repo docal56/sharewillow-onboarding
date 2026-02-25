@@ -21,13 +21,39 @@ export function parseCSV(
 
 function findColumn(row: CSVRow, candidates: string[]): string | undefined {
   const keys = Object.keys(row);
+  const normalized = keys.map((key) => ({
+    key,
+    normalizedKey: key.toLowerCase().replace(/[^a-z0-9]/g, ""),
+  }));
+
   for (const candidate of candidates) {
-    const found = keys.find(
-      (k) => k.toLowerCase().replace(/[_\s-]/g, "") === candidate.toLowerCase().replace(/[_\s-]/g, "")
-    );
-    if (found) return found;
+    const normalizedCandidate = candidate.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const exact = normalized.find((k) => k.normalizedKey === normalizedCandidate);
+    if (exact) return exact.key;
   }
+
+  for (const candidate of candidates) {
+    const normalizedCandidate = candidate.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const partial = normalized.find((k) =>
+      k.normalizedKey.includes(normalizedCandidate) ||
+      normalizedCandidate.includes(k.normalizedKey)
+    );
+    if (partial) return partial.key;
+  }
+
   return undefined;
+}
+
+function toNumber(value: string | number | undefined): number | null {
+  if (value == null) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+
+  const cleaned = value
+    .replace(/\(([^)]+)\)/g, "-$1")
+    .replace(/[$,%\s]/g, "")
+    .replace(/,/g, "");
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function extractSummary(rows: CSVRow[]): CSVSummary {
@@ -36,6 +62,8 @@ function extractSummary(rows: CSVRow[]): CSVSummary {
       avgTicket: null,
       billableEfficiency: null,
       callbackRate: null,
+      googleRating: null,
+      monthlyOvertimeSpend: null,
       totalJobs: 0,
       totalRevenue: null,
     };
@@ -60,8 +88,8 @@ function extractSummary(rows: CSVRow[]): CSVSummary {
   let totalRevenue: number | null = null;
   if (jobTotalCol) {
     const values = rows
-      .map((r) => Number(r[jobTotalCol]))
-      .filter((v) => !isNaN(v) && v > 0);
+      .map((r) => toNumber(r[jobTotalCol]))
+      .filter((v): v is number => v != null && v > 0);
     if (values.length > 0) {
       totalRevenue = values.reduce((a, b) => a + b, 0);
       avgTicket = Math.round(totalRevenue / values.length);
@@ -73,22 +101,27 @@ function extractSummary(rows: CSVRow[]): CSVSummary {
     "billablehours",
     "billable_hours",
     "billable",
+    "billabletime",
+    "productivehours",
   ]);
   const totalHoursCol = findColumn(sample, [
     "totalhours",
     "total_hours",
     "hours",
+    "workedhours",
+    "availablehours",
   ]);
 
   let billableEfficiency: number | null = null;
   if (billableCol && totalHoursCol) {
     const pairs = rows
       .map((r) => ({
-        billable: Number(r[billableCol]),
-        total: Number(r[totalHoursCol]),
+        billable: toNumber(r[billableCol]),
+        total: toNumber(r[totalHoursCol]),
       }))
       .filter(
-        (p) => !isNaN(p.billable) && !isNaN(p.total) && p.total > 0
+        (p): p is { billable: number; total: number } =>
+          p.billable != null && p.total != null && p.total > 0
       );
     if (pairs.length > 0) {
       const totalBillable = pairs.reduce((a, p) => a + p.billable, 0);
@@ -106,6 +139,8 @@ function extractSummary(rows: CSVRow[]): CSVSummary {
     "service_type",
     "category",
     "description",
+    "jobdescription",
+    "calltype",
   ]);
 
   let callbackRate: number | null = null;
@@ -121,10 +156,49 @@ function extractSummary(rows: CSVRow[]): CSVSummary {
     }
   }
 
+  const googleRatingCol = findColumn(sample, [
+    "googlerating",
+    "google_rating",
+    "rating",
+    "reviewrating",
+    "average_rating",
+  ]);
+
+  let googleRating: number | null = null;
+  if (googleRatingCol) {
+    const values = rows
+      .map((r) => toNumber(r[googleRatingCol]))
+      .filter((v): v is number => v != null && v > 0 && v <= 5);
+    if (values.length > 0) {
+      googleRating = Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10;
+    }
+  }
+
+  const overtimeCol = findColumn(sample, [
+    "monthlyovertimespend",
+    "overtimespend",
+    "overtimecost",
+    "overtime_pay",
+    "overtimepay",
+    "otcost",
+  ]);
+
+  let monthlyOvertimeSpend: number | null = null;
+  if (overtimeCol) {
+    const values = rows
+      .map((r) => toNumber(r[overtimeCol]))
+      .filter((v): v is number => v != null && v >= 0);
+    if (values.length > 0) {
+      monthlyOvertimeSpend = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+    }
+  }
+
   return {
     avgTicket,
     billableEfficiency,
     callbackRate,
+    googleRating,
+    monthlyOvertimeSpend,
     totalJobs: rows.length,
     totalRevenue,
   };

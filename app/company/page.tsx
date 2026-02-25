@@ -149,15 +149,20 @@ export default function CompanyPage() {
           <Label htmlFor="staff-costs" className="text-sm font-normal text-[#1a1a1a]">
             Annual Staff Costs
           </Label>
-          <Input
-            id="staff-costs"
-            type="text"
-            inputMode="numeric"
-            placeholder="What's your annual staff costs?"
-            className=""
-            value={staffCosts}
-            onChange={(e) => setStaffCosts(formatCurrency(e.target.value))}
-          />
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm leading-[18px] text-[#78716c]">
+              $
+            </span>
+            <Input
+              id="staff-costs"
+              type="text"
+              inputMode="numeric"
+              placeholder="What's your annual staff costs?"
+              className="pl-7"
+              value={staffCosts}
+              onChange={(e) => setStaffCosts(formatCurrency(e.target.value))}
+            />
+          </div>
           {errors.staffCosts && (
             <p className="text-xs text-destructive">{errors.staffCosts}</p>
           )}
@@ -167,15 +172,20 @@ export default function CompanyPage() {
           <Label htmlFor="annual-revenue" className="text-sm font-normal text-[#1a1a1a]">
             Annual Revenue
           </Label>
-          <Input
-            id="annual-revenue"
-            type="text"
-            inputMode="numeric"
-            placeholder="What's your annual revenue?"
-            className=""
-            value={annualRevenue}
-            onChange={(e) => setAnnualRevenue(formatCurrency(e.target.value))}
-          />
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm leading-[18px] text-[#78716c]">
+              $
+            </span>
+            <Input
+              id="annual-revenue"
+              type="text"
+              inputMode="numeric"
+              placeholder="What's your annual revenue?"
+              className="pl-7"
+              value={annualRevenue}
+              onChange={(e) => setAnnualRevenue(formatCurrency(e.target.value))}
+            />
+          </div>
           {errors.annualRevenue && (
             <p className="text-xs text-destructive">{errors.annualRevenue}</p>
           )}
@@ -185,15 +195,20 @@ export default function CompanyPage() {
           <Label htmlFor="avg-job-value" className="text-sm font-normal text-[#1a1a1a]">
             Average Job Value
           </Label>
-          <Input
-            id="avg-job-value"
-            type="text"
-            inputMode="numeric"
-            placeholder="What's your average job value?"
-            className=""
-            value={avgJobValue}
-            onChange={(e) => setAvgJobValue(formatCurrency(e.target.value))}
-          />
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm leading-[18px] text-[#78716c]">
+              $
+            </span>
+            <Input
+              id="avg-job-value"
+              type="text"
+              inputMode="numeric"
+              placeholder="What's your average job value?"
+              className="pl-7"
+              value={avgJobValue}
+              onChange={(e) => setAvgJobValue(formatCurrency(e.target.value))}
+            />
+          </div>
           {errors.avgJobValue && (
             <p className="text-xs text-destructive">{errors.avgJobValue}</p>
           )}

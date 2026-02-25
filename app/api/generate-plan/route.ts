@@ -1,8 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { buildPlanPrompt } from "@/lib/plan-prompt";
+import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
+import { buildPlanPrompt, PlanMode } from "@/lib/plan-prompt";
 import { HVAC_BENCHMARKS } from "@/lib/benchmarks";
 import { BenchmarkMetric, CompanyData, CSVSummary } from "@/types";
+
+const KPIBase = z.object({
+  name: z.string(),
+  current: z.number(),
+  target: z.number(),
+  bonusPerMonth: z.number(),
+  bonusCap: z.number(),
+  rationale: z.string(),
+});
+
+const KPICustom = KPIBase.extend({
+  tooltipCopy: z.string().nullable(),
+});
+
+function getPlanResponseSchema(planMode: PlanMode) {
+  const KPI = planMode === "custom" ? KPICustom : KPIBase;
+  return z.object({
+    reasoning: z.string(),
+    kpis: z.array(KPI),
+    bonusPerTech: z.number(),
+    monthlyPayout: z.number(),
+    projectedUpliftLow: z.number(),
+    projectedUpliftHigh: z.number(),
+    insightCopy: z.object({}).catchall(z.string()),
+  });
+}
+
+const PlanResponse = z.object({
+  reasoning: z.string(),
+  kpis: z.array(KPIBase.or(KPICustom)),
+  bonusPerTech: z.number(),
+  monthlyPayout: z.number(),
+  projectedUpliftLow: z.number(),
+  projectedUpliftHigh: z.number(),
+  insightCopy: z.object({}).catchall(z.string()),
+});
 
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>;
@@ -13,6 +51,10 @@ export async function POST(request: NextRequest) {
   }
 
   const { companyData, csvSummary, benchmarks } = body;
+  const planMode: PlanMode =
+    body.planMode === "custom" || body.planMode === "generic"
+      ? body.planMode
+      : "generic";
 
   if (!companyData || !csvSummary) {
     return NextResponse.json(
@@ -35,52 +77,29 @@ export async function POST(request: NextRequest) {
     const { system, user } = buildPlanPrompt(
       companyData as Partial<CompanyData>,
       csvSummary as CSVSummary,
-      resolvedBenchmarks
+      resolvedBenchmarks,
+      planMode
     );
+    const planResponseSchema = getPlanResponseSchema(planMode);
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      max_tokens: 2000,
-      response_format: { type: "json_object" },
+    const completion = await openai.chat.completions.parse({
+      model: "gpt-4o-2024-08-06",
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
       ],
+      response_format: zodResponseFormat(planResponseSchema, "incentive_plan"),
     });
 
-    const responseText = completion.choices[0]?.message?.content;
-    if (!responseText) {
+    const parsed = completion.choices[0]?.message?.parsed;
+    if (!parsed) {
       return NextResponse.json(
-        { error: "No response from OpenAI" },
+        { error: "No valid structured response from OpenAI" },
         { status: 502 }
       );
     }
 
-    let jsonText = responseText.trim();
-
-    // Strip markdown code fences if present
-    const fenceMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (fenceMatch) {
-      jsonText = fenceMatch[1];
-    }
-
-    let planData: Record<string, unknown>;
-    try {
-      planData = JSON.parse(jsonText);
-    } catch {
-      return NextResponse.json(
-        { error: "AI returned invalid JSON. Please try again." },
-        { status: 502 }
-      );
-    }
-
-    // Basic shape validation
-    if (!Array.isArray(planData.kpis) || typeof planData.bonusPerTech !== "number") {
-      return NextResponse.json(
-        { error: "AI response did not match expected format. Please try again." },
-        { status: 502 }
-      );
-    }
+    const planData = PlanResponse.omit({ reasoning: true }).parse(parsed);
 
     return NextResponse.json(planData);
   } catch (error: unknown) {

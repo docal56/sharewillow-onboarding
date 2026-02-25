@@ -35,6 +35,8 @@ export function useConnectFlow() {
         unknown
       >;
 
+      const planMode = localSummary ? "custom" : "generic";
+
       const response = await fetch("/api/generate-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -42,6 +44,7 @@ export function useConnectFlow() {
           companyData: safeCompanyData,
           csvSummary: localSummary,
           benchmarks,
+          planMode,
         }),
       });
 
