@@ -32,7 +32,16 @@ export interface KPI {
   current: number;
   target: number;
   bonusPerMonth: number;
+  bonusCap?: number;
   rationale: string;
+  tooltipCopy?: string;
+}
+
+export type PlanMode = "generic" | "custom";
+
+export interface SelectedKPI {
+  name: string;
+  reason: string;
 }
 
 export interface PlanData {
@@ -53,7 +62,23 @@ export interface CSVSummary {
   billableEfficiency: number | null;
   callbackRate: number | null;
   googleRating: number | null;
+  avgGoogleRating?: number | null;
+  maintenanceConversion?: number | null;
+  firstTimeFixRate?: number | null;
+  topPerformerInsights?: string | null;
+  additionalInsights?: string | null;
   monthlyOvertimeSpend: number | null;
   totalJobs: number;
   totalRevenue: number | null;
+}
+
+export interface CalculatedKPI {
+  name: string;
+  current: number;
+  currentFormatted: string;
+  target: number;
+  targetFormatted: string;
+  bonusPerMonth: number;
+  bonusCap: number;
+  invertedScale: boolean;
 }

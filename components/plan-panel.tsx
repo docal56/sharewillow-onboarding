@@ -7,21 +7,10 @@ interface PlanPanelProps {
   planData: PlanData | null;
   teamSize: number;
   isLoading?: boolean;
+  error?: string | null;
+  onGeneratePlan: () => void;
   onConnectData: () => void;
 }
-
-const DEFAULT_PLAN: PlanData = {
-  kpis: [
-    { name: "Average Ticket", current: 280, target: 370, bonusPerMonth: 300, rationale: "" },
-    { name: "Labor Rate", current: 35, target: 28, bonusPerMonth: 300, rationale: "" },
-    { name: "Avg revenue per tech", current: 18000, target: 24300, bonusPerMonth: 200, rationale: "" },
-  ],
-  bonusPerTech: 800,
-  monthlyPayout: 9600,
-  projectedUpliftLow: 520000,
-  projectedUpliftHigh: 680000,
-  insightCopy: {},
-};
 
 function formatKPITarget(name: string, value: number): string {
   const lower = name.toLowerCase();
@@ -49,6 +38,8 @@ export function PlanPanel({
   planData,
   teamSize,
   isLoading,
+  error,
+  onGeneratePlan,
   onConnectData,
 }: PlanPanelProps) {
   if (isLoading) {
@@ -64,7 +55,38 @@ export function PlanPanel({
     );
   }
 
-  const plan = planData ?? DEFAULT_PLAN;
+  if (!planData) {
+    return (
+      <div className="overflow-clip rounded-[12px] border border-[#e5e5e5] bg-white">
+        <div className="flex flex-col gap-[12px] px-[20px] py-[24px]">
+          <h2 className="font-display text-[24px] font-medium leading-none text-[#171717]">
+            Recommended Incentive Plan
+          </h2>
+          <p className="text-[14px] leading-[18px] text-[#4e4e4e]">
+            Generate a plan to see KPI targets and recommended bonus structure
+            based on your benchmarks.
+          </p>
+          {error && (
+            <div className="rounded-[8px] border border-[#f4caca] bg-[#fff4f4] px-3 py-2">
+              <p className="text-[13px] leading-[18px] text-[#b42318]">
+                Last generation failed: {error}
+              </p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={onGeneratePlan}
+            className="mt-2 flex w-full items-center justify-center gap-[6px] rounded-[10px] bg-[#294be7] px-[8px] py-[12px] text-[16px] font-medium leading-[20px] text-white transition-colors hover:bg-[#294be7]/90"
+          >
+            Generate Plan
+            <ArrowRight className="size-[24px]" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const plan = planData;
 
   return (
     <div className="overflow-clip rounded-[12px] border border-[#e5e5e5] bg-white">

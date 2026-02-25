@@ -6,6 +6,7 @@ import { Home, ChevronRight, RotateCcw } from "lucide-react";
 import { BenchmarkCard } from "@/components/benchmark-card";
 import { PlanPanel } from "@/components/plan-panel";
 import { useBenchmarks } from "@/hooks/use-benchmarks";
+import { useConnectFlow } from "@/hooks/use-connect-flow";
 import { useOnboarding, useResetOnboarding } from "@/context/onboarding-context";
 import { CompanyData, CSVSummary } from "@/types";
 import { getTeamSizeBand } from "@/lib/benchmark-catalog";
@@ -54,8 +55,9 @@ function getCurrentValue(
 
 export default function BenchmarksPage() {
   const router = useRouter();
-  const { companyData, csvSummary, planData, isGeneratingPlan } =
+  const { companyData, csvSummary, planData, isGeneratingPlan, planError } =
     useOnboarding();
+  const { handleGenerate } = useConnectFlow();
   const resetOnboarding = useResetOnboarding();
   const { benchmarks } = useBenchmarks();
 
@@ -156,6 +158,8 @@ export default function BenchmarksPage() {
               planData={planData}
               teamSize={companyData.numberOfTechs ?? companyData.teamSize ?? 12}
               isLoading={isGeneratingPlan}
+              error={planError}
+              onGeneratePlan={handleGenerate}
               onConnectData={() => router.push("/connect")}
             />
           </div>

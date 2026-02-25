@@ -22,6 +22,7 @@ interface OnboardingState {
   isGeneratingBenchmarks: boolean;
   planData: PlanData | null;
   isGeneratingPlan: boolean;
+  planError: string | null;
 }
 
 type OnboardingAction =
@@ -31,6 +32,7 @@ type OnboardingAction =
   | { type: "SET_BENCHMARKS"; payload: BenchmarkMetric[] }
   | { type: "SET_GENERATING_BENCHMARKS"; payload: boolean }
   | { type: "SET_PLAN_DATA"; payload: PlanData }
+  | { type: "SET_PLAN_ERROR"; payload: string | null }
   | { type: "SET_GENERATING"; payload: boolean }
   | { type: "RESET" };
 
@@ -42,6 +44,7 @@ const initialState: OnboardingState = {
   isGeneratingBenchmarks: false,
   planData: null,
   isGeneratingPlan: false,
+  planError: null,
 };
 
 function onboardingReducer(
@@ -67,9 +70,20 @@ function onboardingReducer(
     case "SET_GENERATING_BENCHMARKS":
       return { ...state, isGeneratingBenchmarks: action.payload };
     case "SET_PLAN_DATA":
-      return { ...state, planData: action.payload, isGeneratingPlan: false };
+      return {
+        ...state,
+        planData: action.payload,
+        isGeneratingPlan: false,
+        planError: null,
+      };
+    case "SET_PLAN_ERROR":
+      return { ...state, planError: action.payload, isGeneratingPlan: false };
     case "SET_GENERATING":
-      return { ...state, isGeneratingPlan: action.payload };
+      return {
+        ...state,
+        isGeneratingPlan: action.payload,
+        planError: action.payload ? null : state.planError,
+      };
     case "RESET":
       return initialState;
     default:

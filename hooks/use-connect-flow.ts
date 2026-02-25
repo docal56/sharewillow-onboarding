@@ -22,8 +22,6 @@ export function useConnectFlow() {
   }
 
   async function handleGenerate(): Promise<boolean> {
-    if (!localSummary) return false;
-
     dispatch({ type: "SET_GENERATING", payload: true });
     setIsGenerating(true);
     setError(null);
@@ -35,6 +33,16 @@ export function useConnectFlow() {
         unknown
       >;
 
+      const fallbackSummary: CSVSummary = {
+        avgTicket: null,
+        billableEfficiency: null,
+        callbackRate: null,
+        googleRating: null,
+        monthlyOvertimeSpend: null,
+        totalJobs: 0,
+        totalRevenue: null,
+      };
+      const effectiveSummary = localSummary ?? fallbackSummary;
       const planMode = localSummary ? "custom" : "generic";
 
       const response = await fetch("/api/generate-plan", {
@@ -42,7 +50,7 @@ export function useConnectFlow() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           companyData: safeCompanyData,
-          csvSummary: localSummary,
+          csvSummary: effectiveSummary,
           benchmarks,
           planMode,
         }),
@@ -66,14 +74,14 @@ export function useConnectFlow() {
       const message =
         err instanceof Error ? err.message : "Something went wrong";
       setError(message);
-      dispatch({ type: "SET_GENERATING", payload: false });
+      dispatch({ type: "SET_PLAN_ERROR", payload: message });
       return false;
     } finally {
       setIsGenerating(false);
     }
   }
 
-  const canGenerate = localSummary !== null;
+  const canGenerate = true;
 
   return {
     localSummary,

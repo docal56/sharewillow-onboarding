@@ -145,9 +145,17 @@ export function BenchmarkCard({
     ...(hasYou
       ? [{ label: "You", value: currentValue!, isYou: true }]
       : []),
-    { label: "Upper", value: metric.upper, isYou: false },
+    {
+      label: "Upper",
+      value: metric.invertedScale ? metric.lower : metric.upper,
+      isYou: false,
+    },
     { label: "Median", value: metric.median, isYou: false },
-    { label: "Lower", value: metric.lower, isYou: false },
+    {
+      label: "Lower",
+      value: metric.invertedScale ? metric.upper : metric.lower,
+      isYou: false,
+    },
   ];
 
   return (
