@@ -4,6 +4,7 @@ export interface CompanyData {
   password: string;
   industry: string;
   teamSize: number;
+  numberOfTechs: number;
   staffCosts: number;
   annualRevenue: number;
   avgJobValue: number;

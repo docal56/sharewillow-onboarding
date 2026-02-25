@@ -118,6 +118,9 @@ export default function BenchmarksPage() {
                   currentValue={getCurrentValue(metric.name, companyData, csvSummary)}
                   industry={industryLabel}
                   teamSizeBand={teamSizeBand}
+                  insightState={hasConnectedData ? "dataUploaded" : "formOnly"}
+                  techCount={companyData.numberOfTechs ?? companyData.teamSize}
+                  annualRevenue={companyData.annualRevenue}
                 />
               ))}
 
@@ -142,7 +145,7 @@ export default function BenchmarksPage() {
           <div className="w-[500px] shrink-0">
             <PlanPanel
               planData={planData}
-              teamSize={companyData.teamSize ?? 12}
+              teamSize={companyData.numberOfTechs ?? companyData.teamSize ?? 12}
               isLoading={isGeneratingPlan}
               onConnectData={() => router.push("/connect")}
             />

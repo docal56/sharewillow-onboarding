@@ -1,9 +1,4 @@
 import { BenchmarkMetric, RichDescription } from "@/types";
-import {
-  BENCHMARK_INSIGHT_PROMPTS,
-  InsightMetricName,
-  renderInsightPrompt,
-} from "@/lib/benchmark-insight-prompts";
 
 type TeamSizeBand =
   | "5-10"
@@ -436,26 +431,14 @@ function buildDescription(
   median: number,
   upper: number
 ): RichDescription {
-  const template = BENCHMARK_INSIGHT_PROMPTS[name as InsightMetricName];
-
-  if (!template) {
-    const display = METRIC_META[name].displayName.toLowerCase();
-    return [
-      [
-        { text: `For ${industry} companies with ${band} team members, the median ${display} is ` },
-        { text: `${formatMetricValue(name, median)}.`, color: "green" },
-      ],
-      [{ text: `Typical range runs from ${formatMetricValue(name, lower)} to ${formatMetricValue(name, upper)}.` }],
-    ];
-  }
-
-  return renderInsightPrompt(template, {
-    industry,
-    band,
-    median: formatMetricValue(name, median),
-    lower: formatMetricValue(name, lower),
-    upper: formatMetricValue(name, upper),
-  });
+  const display = METRIC_META[name].displayName.toLowerCase();
+  return [
+    [
+      { text: `For ${industry} companies with ${band} team members, the median ${display} is ` },
+      { text: `${formatMetricValue(name, median)}.`, color: "green" },
+    ],
+    [{ text: `Typical range runs from ${formatMetricValue(name, lower)} to ${formatMetricValue(name, upper)}.` }],
+  ];
 }
 
 function buildCatalog(rows: CsvRow[]): BenchmarkCatalog {

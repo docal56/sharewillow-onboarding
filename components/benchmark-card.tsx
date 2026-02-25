@@ -2,8 +2,11 @@
 
 import { BenchmarkMetric, RichDescription, TextSegment } from "@/types";
 import {
-  BENCHMARK_INSIGHT_PROMPTS,
-  renderInsightPrompt,
+  buildBenchmarkInsightDescription,
+  getComparisonBucket,
+  InsightDataState,
+  InsightMetricName,
+  METRIC_POLARITY,
 } from "@/lib/benchmark-insight-prompts";
 
 interface BenchmarkCardProps {
@@ -11,6 +14,9 @@ interface BenchmarkCardProps {
   currentValue?: number | null;
   industry: string;
   teamSizeBand: string;
+  insightState: InsightDataState;
+  techCount?: number;
+  annualRevenue?: number;
 }
 
 const HIGHLIGHT_COLORS = {
@@ -63,6 +69,20 @@ function formatCompactCurrency(value: number): string {
   return `$${Math.round(value).toLocaleString()}`;
 }
 
+function formatDelta(value: number, metric: BenchmarkMetric): string {
+  const abs = Math.abs(value);
+  if (metric.unit === "currency" || metric.unit === "currencyPerMonth") {
+    return formatCompactCurrency(abs);
+  }
+  if (metric.unit === "percentage") {
+    return `${Number(abs.toFixed(2)).toString()}%`;
+  }
+  if (metric.unit === "rating") {
+    return Number(abs.toFixed(1)).toString();
+  }
+  return Number(abs.toFixed(2)).toString();
+}
+
 const FIGMA_BAR_WIDTHS: Record<string, number> = {
   You: 142,
   Upper: 372,
@@ -75,24 +95,49 @@ export function BenchmarkCard({
   currentValue,
   industry,
   teamSizeBand,
+  insightState,
+  techCount,
+  annualRevenue,
 }: BenchmarkCardProps) {
   const hasYou = currentValue != null;
   const description: RichDescription = (() => {
-    if (metric.name !== "annualRevenue" || currentValue == null) {
+    const metricName = metric.name as InsightMetricName;
+    const polarity = METRIC_POLARITY[metricName];
+    if (!polarity) {
       return metric.description;
     }
 
-    const gap = Math.max(0, metric.median - currentValue);
-    const monthlyGap = gap / 12;
+    const safeCurrent = currentValue ?? metric.median;
+    const delta = Math.abs(safeCurrent - metric.median);
+    const monthlyGap = delta / 12;
+    const comparison = getComparisonBucket(currentValue, metric.median, 0.01);
 
-    return renderInsightPrompt(BENCHMARK_INSIGHT_PROMPTS.annualRevenue, {
+    const annualLaborImpact =
+      metricName === "laborRate" &&
+      currentValue != null &&
+      annualRevenue != null &&
+      currentValue > metric.median
+        ? ((currentValue - metric.median) / 100) * annualRevenue
+        : null;
+
+    return buildBenchmarkInsightDescription({
+      metric: metricName,
+      dataState: insightState,
+      polarity,
+      comparison,
       industry,
       band: teamSizeBand,
       median: formatValue(metric.median, metric),
       lower: formatValue(metric.lower, metric),
       upper: formatValue(metric.upper, metric),
-      delta: formatCompactCurrency(gap),
+      currentValue: formatValue(safeCurrent, metric),
+      delta: formatDelta(delta, metric),
       monthly_delta: formatCompactCurrency(monthlyGap),
+      techCount: techCount != null ? techCount.toLocaleString() : undefined,
+      callsPerDay: undefined,
+      dailyRevenueLoss: undefined,
+      annualLaborCostImpact:
+        annualLaborImpact != null ? formatCompactCurrency(annualLaborImpact) : undefined,
     });
   })();
 

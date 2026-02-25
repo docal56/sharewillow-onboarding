@@ -38,6 +38,7 @@ export default function CompanyPage() {
   const dispatch = useOnboardingDispatch();
   const [industry, setIndustry] = useState("");
   const [teamSize, setTeamSize] = useState("");
+  const [numberOfTechs, setNumberOfTechs] = useState("");
   const [staffCosts, setStaffCosts] = useState("");
   const [annualRevenue, setAnnualRevenue] = useState("");
   const [avgJobValue, setAvgJobValue] = useState("");
@@ -50,6 +51,8 @@ export default function CompanyPage() {
     if (!industry) newErrors.industry = "Select an industry";
     if (!teamSize || parseNumber(teamSize) <= 0)
       newErrors.teamSize = "Enter a valid team size";
+    if (!numberOfTechs || parseNumber(numberOfTechs) <= 0)
+      newErrors.numberOfTechs = "Enter a valid number of technicians";
     if (!staffCosts || parseNumber(staffCosts) <= 0)
       newErrors.staffCosts = "Enter annual staff costs";
     if (!annualRevenue || parseNumber(annualRevenue) <= 0)
@@ -67,6 +70,7 @@ export default function CompanyPage() {
       payload: {
         industry,
         teamSize: parseNumber(teamSize),
+        numberOfTechs: parseNumber(numberOfTechs),
         staffCosts: parseNumber(staffCosts),
         annualRevenue: parseNumber(annualRevenue),
         avgJobValue: parseNumber(avgJobValue),
@@ -120,6 +124,24 @@ export default function CompanyPage() {
           />
           {errors.teamSize && (
             <p className="text-xs text-destructive">{errors.teamSize}</p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="number-of-techs" className="text-sm font-normal text-[#1a1a1a]">
+            Number of Techs
+          </Label>
+          <Input
+            id="number-of-techs"
+            type="text"
+            inputMode="numeric"
+            placeholder="How many technicians are on your team?"
+            className=""
+            value={numberOfTechs}
+            onChange={(e) => setNumberOfTechs(e.target.value)}
+          />
+          {errors.numberOfTechs && (
+            <p className="text-xs text-destructive">{errors.numberOfTechs}</p>
           )}
         </div>
 
