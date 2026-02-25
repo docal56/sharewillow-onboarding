@@ -63,7 +63,8 @@ function calculateTarget(
   median: number,
   topPerformer: number | null,
   invertedScale: boolean,
-  planMode: PlanMode
+  planMode: PlanMode,
+  gapClosureRate: number
 ): number {
   const reference =
     planMode === "custom" && topPerformer !== null ? topPerformer : median;
@@ -83,7 +84,7 @@ function calculateTarget(
     }
   }
 
-  const improvement = gap * 0.4;
+  const improvement = gap * gapClosureRate;
 
   if (invertedScale) {
     return Math.round((current - improvement) * 100) / 100;
@@ -94,20 +95,19 @@ function calculateTarget(
 
 function calculateBonuses(
   kpis: { current: number; target: number }[],
-  teamSize: number
+  teamSize: number,
+  totalBonus: number
 ): { bonusPerMonth: number; bonusCap: number }[] {
-  let totalBonus = 800;
-  if (teamSize <= 3) totalBonus = 500;
-  else if (teamSize >= 50) totalBonus = 1200;
+  void teamSize;
 
   const gaps = kpis.map((kpi) => Math.abs(kpi.target - kpi.current));
   const totalGap = gaps.reduce((sum, g) => sum + g, 0);
 
   if (totalGap === 0) {
-    const even = Math.round(totalBonus / 3);
+    const even = Math.min(400, Math.round(totalBonus / 3));
     return kpis.map(() => ({
       bonusPerMonth: even,
-      bonusCap: Math.round(even * 1.5),
+      bonusCap: Math.min(400, Math.round(even * 1.5)),
     }));
   }
 
@@ -125,9 +125,38 @@ function calculateBonuses(
   const largestIndex = rawBonuses.indexOf(Math.max(...rawBonuses));
   rawBonuses[largestIndex] += diff;
 
+  // Hard cap each KPI monthly bonus at $400 and redistribute any overflow.
+  const CAP = 400;
+  let overflow = 0;
+  rawBonuses = rawBonuses.map((b) => {
+    if (b > CAP) {
+      overflow += b - CAP;
+      return CAP;
+    }
+    return b;
+  });
+
+  while (overflow > 0) {
+    const candidates = rawBonuses
+      .map((bonus, index) => ({ bonus, index }))
+      .filter(({ bonus }) => bonus < CAP)
+      .sort((a, b) => b.bonus - a.bonus);
+
+    if (candidates.length === 0) break;
+
+    for (const { index } of candidates) {
+      if (overflow <= 0) break;
+      const room = CAP - rawBonuses[index];
+      if (room <= 0) continue;
+      const add = Math.min(room, overflow);
+      rawBonuses[index] += add;
+      overflow -= add;
+    }
+  }
+
   return rawBonuses.map((bonus) => ({
     bonusPerMonth: bonus,
-    bonusCap: Math.round(bonus * 1.5),
+    bonusCap: Math.min(400, Math.round(bonus * 1.5)),
   }));
 }
 
@@ -144,6 +173,11 @@ function getCurrentValue(
       return csvSummary.billableEfficiency ?? null;
     case "Callback Rate":
       return csvSummary.callbackRate ?? null;
+    case "Labor Rate":
+      if (companyData.staffCosts && companyData.annualRevenue) {
+        return Math.round((companyData.staffCosts / companyData.annualRevenue) * 100);
+      }
+      return null;
     case "Revenue Per Technician":
       if (companyData.annualRevenue && teamSize) {
         return Math.round(companyData.annualRevenue / 12 / teamSize);
@@ -201,6 +235,72 @@ function createFallbackKPI(
   };
 }
 
+export function estimateGrossUplift(
+  kpis: CalculatedKPI[],
+  teamSize: number,
+  companyData: Partial<CompanyData>
+): number {
+  const annualRevenue = companyData.annualRevenue ?? 0;
+  let totalUplift = 0;
+
+  for (const kpi of kpis) {
+    const improvement = Math.abs(kpi.target - kpi.current);
+
+    switch (kpi.name) {
+      case "Average Job Value": {
+        const estimatedJobsPerTechPerMonth = 60;
+        totalUplift += improvement * estimatedJobsPerTechPerMonth * teamSize * 12;
+        break;
+      }
+      case "Revenue Per Technician": {
+        totalUplift += improvement * teamSize * 12;
+        break;
+      }
+      case "Billable Efficiency": {
+        const revenueImpactPerPoint = annualRevenue * 0.01;
+        totalUplift += improvement * revenueImpactPerPoint;
+        break;
+      }
+      case "Labor Rate": {
+        const savingsPerPoint = annualRevenue * 0.01;
+        totalUplift += improvement * savingsPerPoint;
+        break;
+      }
+      case "Callback Rate": {
+        const avgJobValue =
+          kpis.find((k) => k.name === "Average Job Value")?.current ?? 350;
+        const estimatedJobsPerYear = 60 * teamSize * 12;
+        const callbacksAvoided = (improvement / 100) * estimatedJobsPerYear;
+        totalUplift += callbacksAvoided * avgJobValue;
+        break;
+      }
+      case "Maintenance Agreement Conversion": {
+        const estimatedJobsPerYear = 60 * teamSize * 12;
+        const newAgreements = (improvement / 100) * estimatedJobsPerYear;
+        totalUplift += newAgreements * 500;
+        break;
+      }
+      case "Average Google Rating": {
+        const starImprovement = improvement / 0.1;
+        totalUplift += starImprovement * annualRevenue * 0.02;
+        break;
+      }
+      case "First-Time Fix Rate": {
+        const avgJobValue =
+          kpis.find((k) => k.name === "Average Job Value")?.current ?? 350;
+        const estimatedJobsPerYear = 60 * teamSize * 12;
+        const extraFixedJobs = (improvement / 100) * estimatedJobsPerYear;
+        totalUplift += extraFixedJobs * (avgJobValue * 0.3);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  return totalUplift;
+}
+
 export function buildKPISelectionPrompt(
   companyData: Partial<CompanyData>,
   csvSummary: CSVSummary,
@@ -210,15 +310,20 @@ export function buildKPISelectionPrompt(
   const industry = companyData.industry ?? "trades";
   const benchmarkContext = buildBenchmarkContext(benchmarks);
   const companyMetrics = buildCompanyMetrics(companyData, csvSummary);
+  const taskBlock =
+    planMode === "generic"
+      ? `The company has 3 available metrics. Select all 3 as KPIs for the incentive plan and explain why each matters. Return them as a JSON object.`
+      : `Select exactly 3 KPIs from the eligible list below. You must always return exactly 3 KPIs, no more, no fewer. If fewer than 3 metrics have company data available, select the closest matching metrics based on the company profile and industry benchmarks — you can infer reasonable current values from the available data (e.g. estimate Revenue Per Technician from annual revenue and team size). Return them as a JSON object.`;
+  const eligibleKPIsBlock =
+    planMode === "generic"
+      ? `You have exactly 3 metrics available. Select all 3 as the plan KPIs:
 
-  const system = `You are an expert incentive plan consultant for trades and home services businesses. Your role is to select the 3 highest-impact KPIs for a technician bonus plan based on company data and industry benchmarks.
+- "Average Job Value" — the average dollar amount per completed job
+- "Revenue Per Technician" — monthly revenue generated per tech
+- "Labor Rate" — percentage of revenue spent on staff costs (lower is better)
 
-<task>
-Select exactly 3 KPIs from the eligible list below. Return them as a JSON object.
-</task>
-
-<eligible_kpis>
-Only select from this list. These are metrics a technician can directly influence through their daily work:
+Select all 3. These are the only metrics available from the form data.`
+      : `Select from this list. Only select a KPI if the company has data for it in their connected data.
 
 - "Average Job Value" — the average dollar amount per completed job
 - "Billable Efficiency" — percentage of paid hours spent on billable work
@@ -227,8 +332,16 @@ Only select from this list. These are metrics a technician can directly influenc
 - "Average Google Rating" — average star rating from customer reviews
 - "Maintenance Agreement Conversion" — percentage of visits that result in a maintenance agreement sale
 - "First-Time Fix Rate" — percentage of jobs completed on the first visit
+- "Labor Rate" — percentage of revenue spent on staff costs (lower is better)`;
 
-Only select a KPI if the company has data for it. If a metric is missing from the company data, skip it.
+  const system = `You are an expert incentive plan consultant for trades and home services businesses. Your role is to select the 3 highest-impact KPIs for a technician bonus plan based on company data and industry benchmarks.
+
+<task>
+${taskBlock}
+</task>
+
+<eligible_kpis>
+${eligibleKPIsBlock}
 </eligible_kpis>
 
 <selection_criteria>
@@ -315,7 +428,24 @@ export function calculatePlanTargets(
   benchmarks: BenchmarkMetric[],
   planMode: PlanMode
 ): CalculatedKPI[] {
-  const eligibleKPINames = [
+  const teamSize = companyData.teamSize ?? 15;
+  const annualRevenue = companyData.annualRevenue ?? 0;
+  const minimumNetUplift = annualRevenue * 0.2;
+
+  let gapClosureRate = 0.4;
+  const maxGapClosureRate = 0.65;
+  let totalBonus = 800;
+  const minTotalBonus = 500;
+
+  if (teamSize <= 3) totalBonus = 500;
+  else if (teamSize >= 50) totalBonus = 1200;
+
+  const genericEligibleKPINames = [
+    "Average Job Value",
+    "Revenue Per Technician",
+    "Labor Rate",
+  ];
+  const customEligibleKPINames = [
     "Average Job Value",
     "Billable Efficiency",
     "Callback Rate",
@@ -323,7 +453,10 @@ export function calculatePlanTargets(
     "Average Google Rating",
     "Maintenance Agreement Conversion",
     "First-Time Fix Rate",
+    "Labor Rate",
   ];
+  const eligibleKPINames =
+    planMode === "generic" ? genericEligibleKPINames : customEligibleKPINames;
 
   const availableKPINames = eligibleKPINames.filter((name) => {
     const current = getCurrentValue(name, companyData, csvSummary);
@@ -345,54 +478,91 @@ export function calculatePlanTargets(
   const selectedNames = selectedKPIs
     .map((kpi) => kpi.name)
     .filter((name, idx, arr) => arr.indexOf(name) === idx)
-    .filter((name) => availableKPINames.includes(name));
+    .filter((name) =>
+      planMode === "generic"
+        ? eligibleKPINames.includes(name)
+        : availableKPINames.includes(name)
+    );
 
-  for (const candidate of byGapDesc) {
-    if (selectedNames.length >= 3) break;
-    if (!selectedNames.includes(candidate)) selectedNames.push(candidate);
+  if (planMode === "generic") {
+    for (const candidate of genericEligibleKPINames) {
+      if (selectedNames.length >= 3) break;
+      if (!selectedNames.includes(candidate)) selectedNames.push(candidate);
+    }
+  } else {
+    for (const candidate of byGapDesc) {
+      if (selectedNames.length >= 3) break;
+      if (!selectedNames.includes(candidate)) selectedNames.push(candidate);
+    }
+
+    for (const candidate of availableKPINames) {
+      if (selectedNames.length >= 3) break;
+      if (!selectedNames.includes(candidate)) selectedNames.push(candidate);
+    }
   }
 
   const namesForPlan = selectedNames.slice(0, 3);
+  let kpis: CalculatedKPI[] = [];
 
-  const kpis = namesForPlan.map((name) => {
-    const selected = selectedKPIs.find((kpi) => kpi.name === name) ?? {
-      name,
-      reason: "",
-    };
-    const current = getCurrentValue(selected.name, companyData, csvSummary);
-    const benchmark = getBenchmarkForKPI(selected.name, benchmarks);
+  for (let attempt = 0; attempt < 10; attempt++) {
+    kpis = namesForPlan.map((name) => {
+      const selected = selectedKPIs.find((kpi) => kpi.name === name) ?? {
+        name,
+        reason: "",
+      };
+      const current = getCurrentValue(selected.name, companyData, csvSummary);
+      const benchmark = getBenchmarkForKPI(selected.name, benchmarks);
+      const inferredCurrent = current ?? benchmark?.median ?? 0;
 
-    if (current === null || benchmark === null) {
-      return createFallbackKPI(selected.name, current ?? 0, benchmark);
+      if (benchmark === null) {
+        return createFallbackKPI(selected.name, inferredCurrent, benchmark);
+      }
+
+      const invertedScale = benchmark.invertedScale ?? false;
+      const target = calculateTarget(
+        inferredCurrent,
+        benchmark.median,
+        null,
+        invertedScale,
+        planMode,
+        gapClosureRate
+      );
+
+      return {
+        name: selected.name,
+        current: inferredCurrent,
+        currentFormatted: formatKPIValue(selected.name, inferredCurrent),
+        target,
+        targetFormatted: formatKPIValue(selected.name, target),
+        bonusPerMonth: 0,
+        bonusCap: 0,
+        invertedScale,
+      };
+    });
+
+    const bonuses = calculateBonuses(kpis, teamSize, totalBonus);
+    kpis.forEach((kpi, i) => {
+      kpi.bonusPerMonth = bonuses[i].bonusPerMonth;
+      kpi.bonusCap = bonuses[i].bonusCap;
+    });
+
+    const estimatedGrossUplift = estimateGrossUplift(kpis, teamSize, companyData);
+    const annualBonusCost = totalBonus * teamSize * 12;
+    const netUplift = estimatedGrossUplift - annualBonusCost;
+
+    if (netUplift >= minimumNetUplift) break;
+
+    const canIncreaseGap = gapClosureRate < maxGapClosureRate;
+    const canReduceBonus = totalBonus > minTotalBonus;
+    if (!canIncreaseGap && !canReduceBonus) break;
+
+    if (canIncreaseGap) {
+      gapClosureRate = Math.min(gapClosureRate + 0.05, maxGapClosureRate);
     }
-
-    const invertedScale = benchmark.invertedScale ?? false;
-    const target = calculateTarget(
-      current,
-      benchmark.median,
-      null,
-      invertedScale,
-      planMode
-    );
-
-    return {
-      name: selected.name,
-      current,
-      currentFormatted: formatKPIValue(selected.name, current),
-      target,
-      targetFormatted: formatKPIValue(selected.name, target),
-      bonusPerMonth: 0,
-      bonusCap: 0,
-      invertedScale,
-    };
-  });
-
-  const teamSize = companyData.teamSize ?? 15;
-  const bonuses = calculateBonuses(kpis, teamSize);
-  kpis.forEach((kpi, i) => {
-    kpi.bonusPerMonth = bonuses[i].bonusPerMonth;
-    kpi.bonusCap = bonuses[i].bonusCap;
-  });
+    if (canReduceBonus) {
+      totalBonus = Math.max(totalBonus - 50, minTotalBonus);
+    }
+  }
 
   return kpis;
 }

@@ -4,6 +4,7 @@ import {
   buildCopyPrompt,
   buildKPISelectionPrompt,
   calculatePlanTargets,
+  estimateGrossUplift,
 } from "@/lib/plan-prompt";
 import { HVAC_BENCHMARKS } from "@/lib/benchmarks";
 import { BenchmarkMetric, CompanyData, CSVSummary, PlanMode } from "@/types";
@@ -226,6 +227,15 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Combine into final plan response ───────────────────
+    const teamSize = companyData.teamSize ?? 1;
+    const annualBonusCost = totalBonus * teamSize * 12;
+    const grossUplift = estimateGrossUplift(calculatedKPIs, teamSize, companyData);
+    const netUpliftLow = Math.max(0, Math.round(grossUplift * 0.5) - annualBonusCost);
+    const netUpliftHigh = Math.max(
+      0,
+      Math.round(grossUplift * 0.85) - annualBonusCost
+    );
+
     const planData = {
       kpis: calculatedKPIs.map((kpi, i) => ({
         name: kpi.name,
@@ -238,8 +248,8 @@ export async function POST(req: NextRequest) {
       })),
       bonusPerTech: totalBonus,
       monthlyPayout: monthlyPayout,
-      projectedUpliftLow: copy.projectedUpliftLow,
-      projectedUpliftHigh: copy.projectedUpliftHigh,
+      projectedUpliftLow: netUpliftLow,
+      projectedUpliftHigh: netUpliftHigh,
       insightCopy: copy.insightCopy,
       _meta: step1Error ? { warning: step1Error } : undefined,
     };
