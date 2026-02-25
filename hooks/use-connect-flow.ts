@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   useOnboarding,
   useOnboardingDispatch,
@@ -16,12 +16,12 @@ export function useConnectFlow() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleCSVParsed(data: { rows: CSVRow[]; summary: CSVSummary }) {
+  const handleCSVParsed = useCallback((data: { rows: CSVRow[]; summary: CSVSummary }) => {
     setLocalSummary(data.summary);
     dispatch({ type: "SET_CSV_DATA", payload: data });
-  }
+  }, [dispatch]);
 
-  async function handleGenerate(): Promise<boolean> {
+  const handleGenerate = useCallback(async (): Promise<boolean> => {
     dispatch({ type: "SET_GENERATING", payload: true });
     setIsGenerating(true);
     setError(null);
@@ -79,7 +79,7 @@ export function useConnectFlow() {
     } finally {
       setIsGenerating(false);
     }
-  }
+  }, [companyData, benchmarks, dispatch, localSummary]);
 
   const canGenerate = true;
 

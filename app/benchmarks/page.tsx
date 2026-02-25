@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Home, ChevronRight, RotateCcw } from "lucide-react";
@@ -58,6 +59,7 @@ export default function BenchmarksPage() {
   const { companyData, csvSummary, planData, isGeneratingPlan, planError } =
     useOnboarding();
   const { handleGenerate } = useConnectFlow();
+  const autoGenerationStarted = useRef(false);
   const resetOnboarding = useResetOnboarding();
   const { benchmarks } = useBenchmarks();
 
@@ -69,6 +71,22 @@ export default function BenchmarksPage() {
 
   const industryLabel = companyData.industry ?? "HVAC";
   const teamSizeBand = getTeamSizeBand(companyData.teamSize ?? 12);
+  const hasRequiredCompanyInputs = Boolean(
+    companyData.industry &&
+      (companyData.numberOfTechs ?? companyData.teamSize) &&
+      companyData.annualRevenue &&
+      companyData.staffCosts &&
+      companyData.avgJobValue
+  );
+
+  useEffect(() => {
+    if (autoGenerationStarted.current) return;
+    if (!hasRequiredCompanyInputs) return;
+    if (isGeneratingPlan || planData) return;
+
+    autoGenerationStarted.current = true;
+    void handleGenerate();
+  }, [handleGenerate, hasRequiredCompanyInputs, isGeneratingPlan, planData]);
 
   function handleReset() {
     resetOnboarding();
