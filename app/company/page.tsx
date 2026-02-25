@@ -29,7 +29,7 @@ const INDUSTRIES = [
   "HVAC",
   "Plumbing",
   "Electrical",
-  "General Contracting",
+  "Roofing",
   "Other",
 ];
 

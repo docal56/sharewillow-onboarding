@@ -1,180 +1,233 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Users, ArrowRight } from "lucide-react";
 import { PlanData } from "@/types";
 
 interface PlanPanelProps {
   planData: PlanData | null;
   teamSize: number;
-  industry?: string;
   isLoading?: boolean;
   onConnectData: () => void;
+}
+
+const DEFAULT_PLAN: PlanData = {
+  kpis: [
+    { name: "Average Ticket", current: 280, target: 370, bonusPerMonth: 300, rationale: "" },
+    { name: "Labor Rate", current: 35, target: 28, bonusPerMonth: 300, rationale: "" },
+    { name: "Avg revenue per tech", current: 18000, target: 24300, bonusPerMonth: 200, rationale: "" },
+  ],
+  bonusPerTech: 800,
+  monthlyPayout: 9600,
+  projectedUpliftLow: 520000,
+  projectedUpliftHigh: 680000,
+  insightCopy: {},
+};
+
+function formatKPITarget(name: string, value: number): string {
+  const lower = name.toLowerCase();
+  if (lower.includes("rate") || lower.includes("efficiency")) {
+    return `${value}%`;
+  }
+  if (
+    lower.includes("revenue") ||
+    lower.includes("value") ||
+    lower.includes("ticket") ||
+    lower.includes("member")
+  ) {
+    return `$${value.toLocaleString()}`;
+  }
+  return `${value}`;
+}
+
+function formatCompactCurrency(value: number): string {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `$${Math.round(value / 1_000)}K`;
+  return `$${value}`;
 }
 
 export function PlanPanel({
   planData,
   teamSize,
-  industry,
   isLoading,
   onConnectData,
 }: PlanPanelProps) {
   if (isLoading) {
     return (
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="flex flex-col items-center justify-center py-16">
-          <div className="mb-4 size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">
+      <div className="overflow-clip rounded-[12px] border border-[#e5e5e5] bg-white">
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="mb-4 size-8 animate-spin rounded-full border-2 border-[#294be7] border-t-transparent" />
+          <p className="text-[14px] text-[#4E4E4E]">
             Generating your personalised plan...
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
-  if (!planData) {
-    return <TeaserPanel onConnectData={onConnectData} />;
-  }
+  const plan = planData ?? DEFAULT_PLAN;
 
-  return <FullPanel planData={planData} teamSize={teamSize} industry={industry} />;
-}
-
-function TeaserPanel({ onConnectData }: { onConnectData: () => void }) {
   return (
-    <Card className="border-dashed">
-      <CardHeader>
-        <CardTitle className="font-display text-xl">
+    <div className="overflow-clip rounded-[12px] border border-[#e5e5e5] bg-white">
+      {/* Header */}
+      <div className="flex flex-col gap-[12px] px-[20px] pt-[24px]">
+        <h2 className="font-display text-[24px] font-medium leading-none text-[#171717]">
           Recommended Incentive Plan
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Connect your job data to get a personalised incentive plan based on
-          your actual performance vs industry benchmarks.
+        </h2>
+        <p className="text-[14px] leading-[18px] text-[#4e4e4e]">
+          Based on companies like yours, here&apos;s what a plan typically looks
+          like.
         </p>
+      </div>
 
-        <div className="space-y-3 rounded-lg bg-muted/50 p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            What you&apos;ll get
+      {/* Plan Name */}
+      <div className="flex items-center gap-[12px] px-[20px] pt-[20px]">
+        <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full bg-[#171717]">
+          <Users className="size-[16px] text-white" strokeWidth={2} />
+        </div>
+        <h3 className="font-display text-[20px] font-medium leading-[24px] tracking-[-0.6px] text-[#171717]">
+          Individual Incentive Plan
+        </h3>
+      </div>
+
+      {/* Plan Details */}
+      <div className="border-b border-[#e5e5e5] pb-[20px]">
+        <div className="flex flex-col gap-[16px] px-[20px] pt-[20px]">
+          <p className="text-[14px] font-medium leading-[18px] text-[#171717]">
+            Department: Technicians
           </p>
-          <ul className="space-y-2 text-sm">
-            <li className="flex gap-2">
-              <span className="text-primary">&#10003;</span>
-              Top 3 KPIs for your team
-            </li>
-            <li className="flex gap-2">
-              <span className="text-primary">&#10003;</span>
-              Personalised bonus targets
-            </li>
-            <li className="flex gap-2">
-              <span className="text-primary">&#10003;</span>
-              Projected revenue uplift
-            </li>
-          </ul>
-        </div>
+          <p className="text-[14px] font-medium leading-[18px] text-[#171717]">
+            Team members: {teamSize}
+          </p>
+          <p className="text-[14px] font-medium leading-[18px] text-[#171717]">
+            KPI Targets
+          </p>
 
-        <Button className="w-full" size="lg" onClick={onConnectData}>
-          Get a Personalised Plan
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-function FullPanel({
-  planData,
-  teamSize,
-  industry,
-}: {
-  planData: PlanData;
-  teamSize: number;
-  industry?: string;
-}) {
-  return (
-    <Card className="border-primary/20">
-      <CardHeader>
-        <CardTitle className="font-display text-xl">
-          Recommended Incentive Plan
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Based on your data vs {industry ?? "HVAC"} industry benchmarks
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* KPI table */}
-        <div className="rounded-lg border">
-          <div className="grid grid-cols-4 gap-2 border-b bg-muted/50 px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <span className="col-span-1">KPI</span>
-            <span className="text-right">Current</span>
-            <span className="text-right">Target</span>
-            <span className="text-right">Bonus/mo</span>
-          </div>
-          {planData.kpis.map((kpi) => (
-            <div
-              key={kpi.name}
-              className="grid grid-cols-4 gap-2 border-b px-3 py-2.5 text-sm last:border-b-0"
-            >
-              <span className="col-span-1 font-medium">{kpi.name}</span>
-              <span className="text-right text-muted-foreground">
-                {typeof kpi.current === "number"
-                  ? kpi.current.toLocaleString()
-                  : kpi.current}
-              </span>
-              <span className="text-right font-medium text-primary">
-                {typeof kpi.target === "number"
-                  ? kpi.target.toLocaleString()
-                  : kpi.target}
-              </span>
-              <span className="text-right font-semibold">
-                ${kpi.bonusPerMonth}
-              </span>
+          {/* KPI Table */}
+          <div className="flex flex-col gap-[16px]">
+            {/* Table Header */}
+            <div className="flex items-center border-b border-[#e5e5e5] pb-[12px] text-[14px] font-medium leading-none text-[#171717]">
+              <span className="flex-1">KPI</span>
+              <span className="w-[120px]">Target</span>
+              <span className="w-[80px]">Bonus</span>
             </div>
-          ))}
-        </div>
 
-        {/* Summary stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg bg-muted/50 p-3">
-            <p className="text-xs text-muted-foreground">Bonus per tech</p>
-            <p className="text-lg font-semibold">
-              ${planData.bonusPerTech}/mo
-            </p>
-          </div>
-          <div className="rounded-lg bg-muted/50 p-3">
-            <p className="text-xs text-muted-foreground">Monthly payout</p>
-            <p className="text-lg font-semibold">
-              ${planData.monthlyPayout.toLocaleString()}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              ({teamSize} techs)
-            </p>
+            {/* Table Rows */}
+            {plan.kpis.map((kpi, idx) => (
+              <div key={kpi.name} className="flex flex-col gap-[16px]">
+                <div className="flex h-[14px] items-center text-[14px] leading-none text-[#171717]">
+                  <span className="flex-1">{kpi.name}</span>
+                  <span className="w-[120px]">
+                    {formatKPITarget(kpi.name, kpi.target)}
+                  </span>
+                  <span className="w-[80px]">${kpi.bonusPerMonth}</span>
+                </div>
+                {idx < plan.kpis.length - 1 && (
+                  <div className="h-px w-full bg-[#f3f3f3]" />
+                )}
+              </div>
+            ))}
           </div>
         </div>
+      </div>
 
-        <Separator />
+      {/* Plan Summary */}
+      <div className="pb-[20px]">
+        <div className="flex flex-col gap-[16px] px-[20px] pt-[20px]">
+          <h3 className="font-display text-[20px] font-medium leading-[24px] tracking-[-0.6px] text-[#171717]">
+            Plan Summary
+          </h3>
+
+          {/* Two-column stats */}
+          <div className="flex gap-[16px]">
+            {/* Bonus per technician */}
+            <div className="flex flex-1 flex-col gap-[8px]">
+              <div className="flex flex-col gap-[8px]">
+                <p className="text-[14px] leading-[18px] text-[#4e4e4e]">
+                  Bonus per technician
+                </p>
+                <p className="font-medium text-[#1a1a1a]">
+                  <span className="text-[20px] leading-[24px]">
+                    ${plan.bonusPerTech.toLocaleString()}
+                  </span>
+                  <span className="text-[24px] leading-[24px]"> </span>
+                  <span className="text-[16px] font-normal leading-[24px]">
+                    / mo
+                  </span>
+                </p>
+              </div>
+              <p className="text-[12px] leading-[16px] text-[#4e4e4e]">
+                If all {plan.kpis.length} KPI&apos;s hit
+              </p>
+            </div>
+
+            {/* Monthly Payout */}
+            <div className="flex flex-1 flex-col gap-[8px]">
+              <div className="flex flex-col gap-[8px]">
+                <p className="text-[14px] leading-[18px] text-[#4e4e4e]">
+                  Monthly Payout
+                </p>
+                <p className="font-medium text-[#1a1a1a]">
+                  <span className="text-[20px] leading-[24px]">
+                    ${plan.monthlyPayout.toLocaleString()}
+                  </span>
+                  <span className="text-[24px] leading-[24px]"> </span>
+                  <span className="text-[16px] font-normal leading-[24px]">
+                    / mo
+                  </span>
+                </p>
+              </div>
+              <p className="text-[12px] leading-[16px] text-[#4e4e4e]">
+                Across {teamSize} Technicians
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Projected uplift */}
-        <div className="rounded-lg bg-primary/5 p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Projected Annual Revenue Uplift
-          </p>
-          <p className="mt-1 text-2xl font-bold text-primary">
-            ${planData.projectedUpliftLow.toLocaleString()} &ndash; $
-            {planData.projectedUpliftHigh.toLocaleString()}
-          </p>
+        <div className="px-[8px] pt-[16px]">
+          <div className="rounded-[8px] bg-emerald-100 p-[16px]">
+            <div className="flex flex-col gap-[8px]">
+              <div className="flex flex-col gap-[12px] font-medium">
+                <p className="text-[14px] leading-[18px] text-[#1a1a1a]">
+                  Projected revenue uplift
+                </p>
+                <p className="text-[#1b5d28]">
+                  <span className="text-[24px] leading-[28px]">
+                    {formatCompactCurrency(plan.projectedUpliftLow)}&ndash;
+                    {formatCompactCurrency(plan.projectedUpliftHigh)}{" "}
+                  </span>
+                  <span className="text-[16px] font-normal leading-[28px]">
+                    / yr
+                  </span>
+                </p>
+              </div>
+              <p className="text-[12px] leading-[16px] text-[#4e4e4e]">
+                Based on median improvement rates for{" "}
+                HVAC companies on these {plan.kpis.length} KPIs
+              </p>
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* CTAs */}
-        <div className="flex flex-col gap-2">
-          <Button className="w-full" size="lg">
-            Publish this plan
-          </Button>
-          <Button variant="outline" className="w-full" size="lg">
-            Adjust the plan
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Bottom Section */}
+      <div className="flex flex-col gap-[12px] border-t border-[#e8e8e8] p-[16px]">
+        <p className="text-[16px] font-medium leading-[20px] text-[#1a1a1a]">
+          This plan is an illustration based on the info you gave us.
+        </p>
+        <p className="text-[14px] leading-[20px] text-[#4e4e4e]">
+          Connect your ServiceTitan account and we&apos;ll build a plan tailored
+          to your team and your numbers.
+        </p>
+        <button
+          type="button"
+          onClick={onConnectData}
+          className="flex w-full items-center justify-center gap-[6px] rounded-[10px] bg-[#294be7] px-[8px] py-[12px] text-[16px] font-medium leading-[20px] text-white transition-colors hover:bg-[#294be7]/90"
+        >
+          Get a Personalised Plan
+          <ArrowRight className="size-[24px]" />
+        </button>
+      </div>
+    </div>
   );
 }

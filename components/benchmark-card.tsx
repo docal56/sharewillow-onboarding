@@ -14,7 +14,7 @@ const HIGHLIGHT_COLORS = {
 
 function RichText({ paragraphs }: { paragraphs: RichDescription }) {
   return (
-    <div className="text-[14px] leading-[1.5] text-slate-600">
+    <div className="text-[14px] leading-[1.5] text-[#4e4e4e]">
       {paragraphs.map((segments, pIdx) => (
         <p key={pIdx} className={pIdx < paragraphs.length - 1 ? "mb-3" : ""}>
           {segments.map((seg: TextSegment, sIdx: number) =>
@@ -51,10 +51,12 @@ function formatValue(value: number, metric: BenchmarkMetric): string {
   return `${metric.prefix ?? ""}${value}${metric.suffix ?? ""}`;
 }
 
-function getBarWidthPercent(value: number, maxValue: number): number {
-  if (maxValue === 0 || value === 0) return 0;
-  return Math.max(5, (value / maxValue) * 100);
-}
+const FIGMA_BAR_WIDTHS: Record<string, number> = {
+  You: 142,
+  Upper: 372,
+  Median: 186,
+  Lower: 124,
+};
 
 export function BenchmarkCard({
   metric,
@@ -71,10 +73,8 @@ export function BenchmarkCard({
     { label: "Lower", value: metric.lower, isYou: false },
   ];
 
-  const maxValue = Math.max(...rows.map((r) => r.value));
-
   return (
-    <div className="rounded-[12px] border border-[#e8e8e8] bg-white p-5">
+    <div className="rounded-[16px] border border-[#e8e8e8] bg-white p-5">
       <h2 className="font-display text-[24px] font-medium leading-none text-[#171717]">
         {metric.displayName}
       </h2>
@@ -86,7 +86,7 @@ export function BenchmarkCard({
         </div>
 
         {/* Right — Bar chart */}
-        <div className="flex min-w-0 flex-1 flex-col justify-center gap-3">
+        <div className="flex w-[476px] shrink-0 flex-col justify-center gap-3">
           {rows.map((row) => (
             <div key={row.label} className="flex w-full items-start gap-1">
               <div className="flex h-8 w-[100px] shrink-0 items-center gap-2">
@@ -94,13 +94,13 @@ export function BenchmarkCard({
                   {row.label}
                 </span>
               </div>
-              <div className="relative h-8 min-w-0 flex-1 overflow-clip rounded-[8px]">
+              <div className="relative h-8 w-[372px] shrink-0 overflow-clip rounded-[8px]">
                 <div
                   className={`absolute left-0 top-0 h-8 rounded-[8px] ${
                     row.isYou ? "bg-[#8136e7]" : "bg-[#f1e8ff]"
                   }`}
                   style={{
-                    width: `${getBarWidthPercent(row.value, maxValue)}%`,
+                    width: `${FIGMA_BAR_WIDTHS[row.label] ?? 124}px`,
                   }}
                 />
                 <span

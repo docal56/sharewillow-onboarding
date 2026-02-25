@@ -6,13 +6,13 @@ export const HVAC_BENCHMARKS: BenchmarkMetric[] = [
     displayName: "Annual Revenue",
     description: [
       [
-        { text: "The median HVAC company with 15–25 employees generates " },
-        { text: "$3.8M per year.", color: "green" },
+        { text: "You're " },
+        { text: "generating $1.3M less", color: "red" },
+        { text: " than the median for HVAC companies your size." },
       ],
       [
-        { text: "Top performers push past " },
-        { text: "$6.2M", color: "green" },
-        { text: " — that's the gap worth closing." },
+        { text: "Close that gap and you're looking at an " },
+        { text: "extra $108K per month.", color: "green" },
       ],
     ],
     lower: 2500000,
@@ -26,18 +26,16 @@ export const HVAC_BENCHMARKS: BenchmarkMetric[] = [
     displayName: "Labor Rate",
     description: [
       [
-        {
-          text: "Healthy companies spend closer to ¢26 of every dollar on staff costs.",
-        },
+        { text: "You're spending ¢39 of every dollar on staff costs. " },
+        { text: "Healthy companies spend closer to ¢26.", color: "green" },
       ],
       [
-        { text: "Above " },
-        { text: "¢34", color: "red" },
-        { text: " and margins start to compress fast." },
+        { text: "That 7% gap on your current revenue is " },
+        { text: "costing you around $275K in profit per year.", color: "red" },
       ],
     ],
-    lower: 38,
-    median: 30,
+    lower: 34,
+    median: 26,
     upper: 23,
     unit: "percentage",
     suffix: "%",
@@ -47,11 +45,12 @@ export const HVAC_BENCHMARKS: BenchmarkMetric[] = [
     name: "avgJobValue",
     displayName: "Average Job Value",
     description: [
-      [{ text: "The median ticket for a company your size is $370." }],
       [
-        { text: "High performers average " },
-        { text: "$600+", color: "green" },
-        { text: " by bundling maintenance agreements." },
+        { text: "Your average job is worth $170 less than the median." },
+      ],
+      [
+        { text: "With 12 techs running 3 calls a day, " },
+        { text: "that's $2,200 in unrealised revenue every single day.", color: "red" },
       ],
     ],
     lower: 200,

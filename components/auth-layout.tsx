@@ -1,9 +1,6 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { RotateCcw } from "lucide-react";
-import { useResetOnboarding } from "@/context/onboarding-context";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -12,19 +9,11 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children, heading, subheading }: AuthLayoutProps) {
-  const router = useRouter();
-  const resetOnboarding = useResetOnboarding();
-
-  function handleReset() {
-    resetOnboarding();
-    router.push("/");
-  }
-
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
       {/* Left panel — form */}
       <div className="flex min-h-screen flex-col px-8 py-12 sm:px-12 lg:px-16">
-        {/* Logo + reset */}
+        {/* Logo */}
         <div className="flex items-center justify-between">
           <div className="flex-1" />
           <div className="flex justify-center">
@@ -58,16 +47,7 @@ export function AuthLayout({ children, heading, subheading }: AuthLayoutProps) {
             </defs>
           </svg>
           </div>
-          <div className="flex flex-1 justify-end">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
-            >
-              <RotateCcw className="size-3.5" />
-              Reset
-            </button>
-          </div>
+          <div className="flex-1" />
         </div>
 
         {/* Form — vertically centered in remaining space */}
