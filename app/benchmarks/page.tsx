@@ -9,15 +9,37 @@ import { PlanPanel } from "@/components/plan-panel";
 import { useBenchmarks } from "@/hooks/use-benchmarks";
 import { useConnectFlow } from "@/hooks/use-connect-flow";
 import { useOnboarding, useResetOnboarding } from "@/context/onboarding-context";
-import { CompanyData, CSVSummary } from "@/types";
+import { CompanyData, CSVSummary, PlanData } from "@/types";
 import { getTeamSizeBand } from "@/lib/benchmark-catalog";
+
+function getPlanKpiCurrentValue(
+  metricName: string,
+  planData: PlanData | null
+): number | null {
+  if (!planData) return null;
+
+  const metricToKpiName: Record<string, string> = {
+    avgJobValue: "Average Job Value",
+    billableEfficiency: "Billable Efficiency",
+    callbackRate: "Callback Rate",
+    monthlyRevenuePerMember: "Revenue Per Technician",
+    laborRate: "Labor Rate",
+    googleRating: "Average Google Rating",
+  };
+
+  const kpiName = metricToKpiName[metricName];
+  if (!kpiName) return null;
+  return planData.kpis.find((kpi) => kpi.name === kpiName)?.current ?? null;
+}
 
 function getCurrentValue(
   metricName: string,
   companyData: Partial<CompanyData>,
-  csvSummary: CSVSummary | null
+  csvSummary: CSVSummary | null,
+  planData: PlanData | null
 ): number | null {
   const teamCount = companyData.numberOfTechs ?? companyData.teamSize;
+  const fromPlan = getPlanKpiCurrentValue(metricName, planData);
 
   switch (metricName) {
     case "annualRevenue":
@@ -42,11 +64,11 @@ function getCurrentValue(
       }
       return null;
     case "billableEfficiency":
-      return csvSummary?.billableEfficiency ?? null;
+      return csvSummary?.billableEfficiency ?? fromPlan;
     case "callbackRate":
-      return csvSummary?.callbackRate ?? null;
+      return csvSummary?.callbackRate ?? fromPlan;
     case "googleRating":
-      return csvSummary?.googleRating ?? null;
+      return csvSummary?.googleRating ?? fromPlan;
     case "monthlyOvertimeSpend":
       return csvSummary?.monthlyOvertimeSpend ?? null;
     default:
@@ -68,6 +90,12 @@ export default function BenchmarksPage() {
   const visibleBenchmarks = hasConnectedData
     ? benchmarks
     : benchmarks.filter((m) => PRE_CONNECT_METRICS.includes(m.name));
+  const benchmarkCurrentValues = Object.fromEntries(
+    benchmarks.map((metric) => [
+      metric.displayName,
+      getCurrentValue(metric.name, companyData, csvSummary, planData),
+    ])
+  );
 
   const industryLabel = companyData.industry ?? "HVAC";
   const teamSizeBand = getTeamSizeBand(companyData.teamSize ?? 12);
@@ -144,7 +172,12 @@ export default function BenchmarksPage() {
                 <BenchmarkCard
                   key={metric.name}
                   metric={metric}
-                  currentValue={getCurrentValue(metric.name, companyData, csvSummary)}
+                  currentValue={getCurrentValue(
+                    metric.name,
+                    companyData,
+                    csvSummary,
+                    planData
+                  )}
                   industry={industryLabel}
                   teamSizeBand={teamSizeBand}
                   insightState={hasConnectedData ? "dataUploaded" : "formOnly"}
@@ -175,6 +208,8 @@ export default function BenchmarksPage() {
             <PlanPanel
               planData={planData}
               teamSize={companyData.numberOfTechs ?? companyData.teamSize ?? 12}
+              isCustomPlan={hasConnectedData}
+              benchmarkCurrentValues={benchmarkCurrentValues}
               isLoading={isGeneratingPlan}
               error={planError}
               onGeneratePlan={handleGenerate}

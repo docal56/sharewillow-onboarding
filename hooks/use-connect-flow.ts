@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   useOnboarding,
   useOnboardingDispatch,
@@ -15,6 +15,12 @@ export function useConnectFlow() {
   );
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (csvSummary) {
+      setLocalSummary(csvSummary);
+    }
+  }, [csvSummary]);
 
   const handleCSVParsed = useCallback((data: { rows: CSVRow[]; summary: CSVSummary }) => {
     setLocalSummary(data.summary);
@@ -42,8 +48,9 @@ export function useConnectFlow() {
         totalJobs: 0,
         totalRevenue: null,
       };
-      const effectiveSummary = localSummary ?? fallbackSummary;
-      const planMode = localSummary ? "custom" : "generic";
+      const resolvedSummary = localSummary ?? csvSummary;
+      const effectiveSummary = resolvedSummary ?? fallbackSummary;
+      const planMode = resolvedSummary ? "custom" : "generic";
 
       const response = await fetch("/api/generate-plan", {
         method: "POST",
@@ -79,7 +86,7 @@ export function useConnectFlow() {
     } finally {
       setIsGenerating(false);
     }
-  }, [companyData, benchmarks, dispatch, localSummary]);
+  }, [benchmarks, companyData, csvSummary, dispatch, localSummary]);
 
   const canGenerate = true;
 

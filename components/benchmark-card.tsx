@@ -99,7 +99,9 @@ export function BenchmarkCard({
   techCount,
   annualRevenue,
 }: BenchmarkCardProps) {
-  const hasYou = currentValue != null;
+  const resolvedCurrentValue =
+    currentValue ?? (insightState === "dataUploaded" ? metric.median : null);
+  const hasYou = resolvedCurrentValue != null;
   const description: RichDescription = (() => {
     const metricName = metric.name as InsightMetricName;
     const polarity = METRIC_POLARITY[metricName];
@@ -107,7 +109,7 @@ export function BenchmarkCard({
       return metric.description;
     }
 
-    const safeCurrent = currentValue ?? metric.median;
+    const safeCurrent = resolvedCurrentValue ?? metric.median;
     const delta = Math.abs(safeCurrent - metric.median);
     const monthlyGap = delta / 12;
     const comparison = getComparisonBucket(currentValue, metric.median, 0.01);
@@ -143,7 +145,7 @@ export function BenchmarkCard({
 
   const rows = [
     ...(hasYou
-      ? [{ label: "You", value: currentValue!, isYou: true }]
+      ? [{ label: "You", value: resolvedCurrentValue!, isYou: true }]
       : []),
     {
       label: "Upper",
