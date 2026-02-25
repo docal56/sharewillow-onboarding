@@ -98,7 +98,11 @@ export async function POST(request: NextRequest) {
     const requiredNames = ["annualRevenue", "laborRate", "avgJobValue"];
     const firstThreeNames = parsed.benchmarks
       .slice(0, 3)
-      .map((b: Record<string, unknown>) => b.name);
+      .map((b) =>
+        typeof b === "object" && b !== null && "name" in b
+          ? (b as { name?: unknown }).name
+          : undefined
+      );
     const hasRequired = requiredNames.every((name) =>
       firstThreeNames.includes(name)
     );

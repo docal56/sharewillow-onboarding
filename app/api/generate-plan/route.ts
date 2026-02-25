@@ -34,6 +34,20 @@ function getTextContent(
   throw new Error(`No text content returned by model. Blocks: [${blockTypes}]`);
 }
 
+function getMessageContent(
+  response: unknown
+): Anthropic.Messages.Message["content"] {
+  if (
+    typeof response === "object" &&
+    response !== null &&
+    "content" in response &&
+    Array.isArray((response as { content?: unknown }).content)
+  ) {
+    return (response as Anthropic.Messages.Message).content;
+  }
+  throw new Error("Model returned a streaming or unexpected response shape.");
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -105,7 +119,7 @@ export async function POST(req: NextRequest) {
           },
         } as unknown as Anthropic.Messages.MessageCreateParams);
 
-        const selectionText = getTextContent(selectionResponse.content);
+        const selectionText = getTextContent(getMessageContent(selectionResponse));
         const selectionJson = JSON.parse(selectionText) as {
           selectedKPIs?: { name: string; reason: string }[];
         };
@@ -214,7 +228,7 @@ export async function POST(req: NextRequest) {
           },
         } as unknown as Anthropic.Messages.MessageCreateParams);
 
-        const copyText = getTextContent(copyResponse.content);
+        const copyText = getTextContent(getMessageContent(copyResponse));
         copy = JSON.parse(copyText) as {
           kpiCopy: { name: string; rationale: string; tooltipCopy?: string }[];
           projectedUpliftLow: number;
